@@ -9,7 +9,7 @@ let db: Database.Database | null = null;
 function getDb(): Database.Database {
   if (db) return db;
   fs.mkdirSync(CONFIG.workDir, { recursive: true });
-  const file = path.join(CONFIG.workDir, "magic-deploy.db");
+  const file = path.join(CONFIG.workDir, "mythic.db");
   db = new Database(file);
   db.pragma("journal_mode = WAL");
   db.exec(`

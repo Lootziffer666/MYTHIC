@@ -27,7 +27,7 @@ export function generateDockerfile(analysis: AnalysisResult): string {
 
   const isNode = analysis.language === "Node.js";
   const lines = [
-    `# Magic Deploy generated Dockerfile`,
+    `# MYTHIC generated Dockerfile`,
     `FROM ${base}`,
     `WORKDIR /app`,
     envLines,
@@ -73,16 +73,16 @@ export async function buildWithDockerfile(
   onLog?: (line: string) => void
 ): Promise<string> {
   const dockerfile = generateDockerfile(analysis);
-  fs.writeFileSync(path.join(repoDir, "Dockerfile.magicdeploy"), dockerfile);
+  fs.writeFileSync(path.join(repoDir, "Dockerfile.mythic"), dockerfile);
   onLog?.(`Generated Dockerfile:\n${dockerfile}`);
 
   await new Promise<void>((resolve, reject) => {
     docker.buildImage(
       {
         context: repoDir,
-        src: [...fs.readdirSync(repoDir), "Dockerfile.magicdeploy"],
+        src: [...fs.readdirSync(repoDir), "Dockerfile.mythic"],
       },
-      { t: imageName, dockerfile: "Dockerfile.magicdeploy", pull: true },
+      { t: imageName, dockerfile: "Dockerfile.mythic", pull: true },
       (err: Error | null, stream?: NodeJS.ReadableStream) => {
         if (err || !stream) return reject(err ?? new Error("No build stream"));
         docker.modem.followProgress(

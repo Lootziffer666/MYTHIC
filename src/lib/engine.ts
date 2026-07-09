@@ -15,7 +15,8 @@ import { randomId, slugify, domainFromRepo, imageNameFromId } from "./format";
 import type { CreateDeploymentInput, DeploymentMode, DeploymentRecord, AnalysisResult } from "./types";
 
 const running = new Set<string>();
-const AUTO_FIX = process.env.MAGIC_DEPLOY_AI_AUTOFIX === "true";
+const AUTO_FIX =
+  (process.env.MYTHIC_AI_AUTOFIX ?? process.env.MAGIC_DEPLOY_AI_AUTOFIX) === "true";
 
 export function buildRecord(input: CreateDeploymentInput): DeploymentRecord {
   const id = randomId();
@@ -119,7 +120,7 @@ async function runPipeline(record: DeploymentRecord): Promise<void> {
 
   try {
     ensureDirs();
-    log(`Magic Deploy Wizard — pipeline starting`);
+    log(`MYTHIC — pipeline starting`);
     log(`Repository: ${record.repoUrl} (${record.branch})`);
 
     // --- Phase 1: Ingestion ---

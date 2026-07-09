@@ -24,23 +24,23 @@ services:
       - traefik
     restart: unless-stopped
 
-  magic-deploy:
+  mythic:
     build: .
-    container_name: magic-deploy
+    container_name: mythic
     environment:
-      - MAGIC_DEPLOY_BASE_DOMAIN=${MAGIC_DEPLOY_BASE_DOMAIN:-example.com}
-      - MAGIC_DEPLOY_TRAEFIK_NETWORK=traefik
+      - MYTHIC_BASE_DOMAIN=${MYTHIC_BASE_DOMAIN:-example.com}
+      - MYTHIC_TRAEFIK_NETWORK=traefik
       - DOCKER_HOST=unix:///var/run/docker.sock
     volumes:
       - "/var/run/docker.sock:/var/run/docker.sock"
-      - "magic-deploy-data:/app/.deploy"
+      - "mythic-data:/app/.deploy"
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.magicdeploy.rule=Host(`deploy.${MAGIC_DEPLOY_BASE_DOMAIN:-example.com}`)"
-      - "traefik.http.routers.magicdeploy.entrypoints=websecure"
-      - "traefik.http.routers.magicdeploy.tls=true"
-      - "traefik.http.routers.magicdeploy.tls.certresolver=letsencrypt"
-      - "traefik.http.services.magicdeploy.loadbalancer.server.port=3000"
+      - "traefik.http.routers.mythic.rule=Host(`deploy.${MYTHIC_BASE_DOMAIN:-example.com}`)"
+      - "traefik.http.routers.mythic.entrypoints=websecure"
+      - "traefik.http.routers.mythic.tls=true"
+      - "traefik.http.routers.mythic.tls.certresolver=letsencrypt"
+      - "traefik.http.services.mythic.loadbalancer.server.port=3000"
     networks:
       - traefik
     depends_on:
@@ -53,4 +53,4 @@ networks:
 
 volumes:
   traefik-certs:
-  magic-deploy-data:
+  mythic-data:

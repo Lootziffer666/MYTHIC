@@ -48,7 +48,7 @@ function traefikLabels(name: string, domain: string, port: number): Record<strin
 
 export async function startContainer(opts: StartContainerOpts): Promise<string> {
   const d = getDocker();
-  const containerName = `magic-deploy-${opts.name}`;
+  const containerName = `mythic-${opts.name}`;
 
   // Remove any stale container with the same name.
   try {
@@ -88,7 +88,7 @@ export async function stopContainer(containerId: string): Promise<void> {
 
 export async function removeContainer(containerId: string, name: string): Promise<void> {
   try {
-    const byName = getDocker().getContainer(`magic-deploy-${name}`);
+    const byName = getDocker().getContainer(`mythic-${name}`);
     await byName.remove({ force: true });
   } catch {
     /* ignore */

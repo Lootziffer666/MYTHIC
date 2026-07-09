@@ -16,7 +16,7 @@ WORKDIR /app
 ENV NODE_ENV=production
 ENV PORT=3000
 
-# nixpacks is used by the deployment engine to detect & build user repos.
+# nixpacks is used by the MYTHIC deployment engine to detect & build user repos.
 RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates curl git && \
     curl -fsSL https://bun.sh/install | bash && \
     export PATH="$HOME/.bun/bin:$PATH" && \

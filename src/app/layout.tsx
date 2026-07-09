@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Magic Deploy Wizard",
+  title: "MYTHIC",
   description:
     "Deploy any Git repository to your own server with zero config — clone, detect, build, and route like Vercel or Railway.",
 };

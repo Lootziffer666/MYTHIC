@@ -30,7 +30,7 @@ export function repoNameFromUrl(repoUrl: string): string {
 }
 
 export function imageNameFromId(id: string): string {
-  return `magic-deploy/${id.replace(/_/g, "-")}`;
+  return `mythic/${id.replace(/_/g, "-")}`;
 }
 
 export function safeEnvKey(key: string): string {

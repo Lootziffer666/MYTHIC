@@ -2,7 +2,7 @@
 #
 # coolify-deploy.sh — Deploy a Git repository to your Coolify instance via its API.
 # No Coolify UI needed: this creates the app, configures nixpacks detection, and
-# triggers the deploy in the background — exactly like the "Magic Deploy Wizard".
+# triggers the deploy in the background — exactly like MYTHIC.
 #
 # Usage:
 #   ./coolify-deploy.sh https://github.com/user/my-app.git \

@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This project is a **Magic Deploy Wizard** — a self-hosted, no-code deployment service (like Vercel /
+This project is **MYTHIC** — a self-hosted, no-code deployment service (like Vercel /
 Railway / Coolify) built on a Next.js 16 starter. It clones any Git repo, detects the stack with
 nixpacks, builds a Docker image, and routes it behind Traefik with automatic TLS. Includes AI
 auto-fix of failures and a Coolify API CLI.

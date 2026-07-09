@@ -30,7 +30,7 @@ export function aiConfigured(): boolean {
   return getAiConfig() !== null;
 }
 
-const SYSTEM_PROMPT = `You are a senior DevOps engineer operating the "Magic Deploy Wizard",
+const SYSTEM_PROMPT = `You are a senior DevOps engineer operating "MYTHIC",
 a self-hosted deployment tool (like Vercel/Railway) that clones a Git repo, detects the
 stack with nixpacks, builds a Docker image and routes it behind Traefik.
 

@@ -60,7 +60,7 @@ body {
   color: transparent;
 }
 
-.magic-border {
+.mythic-border {
   position: relative;
   background:
     linear-gradient(var(--background), var(--background)) padding-box,

@@ -12,7 +12,7 @@ export default function Home() {
 
       <header className="mx-auto flex max-w-5xl items-center justify-between px-4 py-6">
         <div className="flex items-center gap-2 text-lg font-semibold">
-          <span className="text-gradient">✦ Magic Deploy</span>
+          <span className="text-gradient">✦ MYTHIC</span>
         </div>
         <nav className="flex items-center gap-4 text-sm text-neutral-400">
           <a href="#how" className="hover:text-white">How it works</a>

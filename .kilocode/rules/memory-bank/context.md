@@ -1,8 +1,8 @@
-# Active Context: Magic Deploy Wizard
+# Active Context: MYTHIC
 
 ## Current State
 
-**Project Status**: ✅ Functional deployment service ("Magic Deploy Wizard") built on top of the Next.js 16 starter.
+**Project Status**: ✅ Functional deployment service ("MYTHIC", formerly "Magic Deploy Wizard") built on top of the Next.js 16 starter.
 
 The app implements a 4-phase deployment pipeline (Ingress → Analysis → Build → Deploy) that
 mirrors Vercel/Railway/Coolify: it clones a Git repo, detects the stack with **nixpacks** (with a
@@ -21,7 +21,7 @@ It runs in **live mode** when Docker + nixpacks are present, and a **simulation 
 - [x] API routes: `/api/deployments`, `/api/deployments/[id]`, `/redeploy`, `/ai-fix`, `/api/analyze`
 - [x] Dashboard + per-deployment detail page with redeploy/stop
 - [x] **AI auto-fix**: OpenAI-compatible chat API (`src/lib/ai.ts`) diagnoses failures and patches
-      build/start/port/env; auto-applied when `MAGIC_DEPLOY_AI_AUTOFIX=true`, manual "✨ Ask AI to fix" button
+      build/start/port/env; auto-applied when `MYTHIC_AI_AUTOFIX=true`, manual "✨ Ask AI to fix" button
 - [x] **Coolify CLI**: `scripts/coolify-deploy.sh` POSTs to `/api/v1/applications` to deploy without the UI
 - [x] `docker-compose.yml` (Traefik + app) and `Dockerfile` (installs nixpacks + docker CLI)
 
@@ -53,4 +53,5 @@ It runs in **live mode** when Docker + nixpacks are present, and a **simulation 
 | Date | Changes |
 |------|---------|
 | Initial | Next.js 16 starter template created |
-| Now | Built Magic Deploy Wizard: 4-phase pipeline, Traefik routing, SQLite, AI auto-fix, Coolify CLI |
+| Now | Built the deploy service: 4-phase pipeline, Traefik routing, SQLite, AI auto-fix, Coolify CLI |
+| Now | Renamed app to **MYTHIC** (UI, env vars `MYTHIC_*` w/ legacy `MAGIC_DEPLOY_*` fallback, container/image/db names) |

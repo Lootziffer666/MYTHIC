@@ -224,7 +224,7 @@ export default function Wizard() {
           <div className="flex gap-3">
             <Button variant="ghost" onClick={() => setStep(0)}>← Back</Button>
             <Button disabled={!domain || deploying} onClick={handleDeploy}>
-              {deploying ? "Deploying…" : "Deploy to magic ✨"}
+              {deploying ? "Deploying…" : "Deploy with MYTHIC ✨"}
             </Button>
           </div>
         </Card>
@@ -278,7 +278,7 @@ function Stepper({ current }: { current: number }) {
               <span
                 className={`flex h-8 w-8 items-center justify-center rounded-full border text-sm font-semibold ${
                   active
-                    ? "border-cyan-400 text-cyan-300 magic-border"
+                    ? "border-cyan-400 text-cyan-300 mythic-border"
                     : done
                       ? "border-emerald-400 text-emerald-300"
                       : "border-neutral-700 text-neutral-500"
@@ -300,7 +300,7 @@ function Stepper({ current }: { current: number }) {
 
 function Card({ title, subtitle, children }: { title: string; subtitle: string; children: React.ReactNode }) {
   return (
-    <div className="glass magic-border rounded-2xl p-6 shadow-2xl">
+    <div className="glass mythic-border rounded-2xl p-6 shadow-2xl">
       <h2 className="text-xl font-semibold text-white">{title}</h2>
       <p className="mb-5 mt-1 text-sm text-neutral-400">{subtitle}</p>
       <div className="space-y-4">{children}</div>
