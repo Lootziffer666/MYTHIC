@@ -39,9 +39,9 @@ function traefikLabels(name: string, domain: string, port: number): Record<strin
   return {
     "traefik.enable": "true",
     [`traefik.http.routers.${safe}.rule`]: `Host(\`${domain}\`)`,
-    [`traefik.http.routers.${safe}.entrypoints`]: "websecure",
+    [`traefik.http.routers.${safe}.entrypoints`]: CONFIG.traefikEntrypoint,
     [`traefik.http.routers.${safe}.tls`]: "true",
-    [`traefik.http.routers.${safe}.tls.certresolver`]: "letsencrypt",
+    [`traefik.http.routers.${safe}.tls.certresolver`]: CONFIG.traefikCertResolver,
     [`traefik.http.services.${safe}.loadbalancer.server.port`]: String(port),
   };
 }
