@@ -9,6 +9,10 @@
 | TypeScript   | 5.9.x   | Type-safe JavaScript            |
 | Tailwind CSS | 4.x     | Utility-first CSS               |
 | Bun          | Latest  | Package manager & runtime       |
+| better-sqlite3 | 11.x  | SQLite store (server-only)      |
+| dockerode    | 4.x     | Docker Engine API client        |
+| nixpacks     | CLI     | Stack detection + image build (host-installed) |
+| Traefik      | 3.x     | Reverse proxy / TLS (docker-compose) |
 
 ## Development Environment
 

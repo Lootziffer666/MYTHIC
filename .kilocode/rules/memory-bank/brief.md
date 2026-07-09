@@ -2,7 +2,10 @@
 
 ## Purpose
 
-This is a minimal Next.js starter template designed for AI-assisted development. It provides a clean foundation that can be extended to build any type of web application through interaction with an AI assistant.
+This project is a **Magic Deploy Wizard** — a self-hosted, no-code deployment service (like Vercel /
+Railway / Coolify) built on a Next.js 16 starter. It clones any Git repo, detects the stack with
+nixpacks, builds a Docker image, and routes it behind Traefik with automatic TLS. Includes AI
+auto-fix of failures and a Coolify API CLI.
 
 ## Target Users
 

@@ -39,3 +39,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# magic deploy runtime data (sqlite db + cloned repos + built images)
+/.deploy/
