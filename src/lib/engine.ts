@@ -11,6 +11,7 @@ import {
   type StartContainerOpts,
 } from "./docker";
 import { requestAiFix, applyFixToAnalysis, aiConfigured } from "./ai";
+import { resolveTraefikSetup } from "./discovery";
 import { randomId, slugify, domainFromRepo, imageNameFromId } from "./format";
 import type { CreateDeploymentInput, DeploymentMode, DeploymentRecord, AnalysisResult } from "./types";
 
@@ -60,6 +61,19 @@ async function buildAndDeploy(
   const mode: DeploymentMode = await detectMode();
   set({ mode });
 
+  if (mode === "live") {
+    const setup = await resolveTraefikSetup();
+    log(
+      `Environment: Docker reachable · Traefik network "${setup.network}", ` +
+        `entrypoint "${setup.entrypoint}", cert resolver "${setup.certResolver}" (${setup.source})`
+    );
+  } else {
+    log(
+      `Environment: running in SIMULATION mode — the Docker socket is not reachable ` +
+        `from MYTHIC. Grant socket access (mount /var/run/docker.sock) to deploy for real.`
+    );
+  }
+
   // --- Phase 3: Build ---
   set({ status: "building" });
   log(`\n[3/4] BUILD — creating Docker image "${record.imageName}"`);
@@ -86,7 +100,7 @@ async function buildAndDeploy(
       domain: record.domain,
       port: analysis.port || record.port,
       env: analysis.environment || {},
-      network: CONFIG.traefikNetwork,
+      // network omitted on purpose — startContainer auto-detects the proxy network.
     };
     containerId = await startContainer(opts);
     log(`Container started: ${containerId.slice(0, 12)}`);

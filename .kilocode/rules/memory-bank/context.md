@@ -55,3 +55,4 @@ It runs in **live mode** when Docker + nixpacks are present, and a **simulation 
 | Initial | Next.js 16 starter template created |
 | Now | Built the deploy service: 4-phase pipeline, Traefik routing, SQLite, AI auto-fix, Coolify CLI |
 | Now | Renamed app to **MYTHIC** (UI, env vars `MYTHIC_*` w/ legacy `MAGIC_DEPLOY_*` fallback, container/image/db names) |
+| Now | **Zero-config discovery** (`src/lib/discovery.ts`): auto-detects Docker socket (multiple candidate paths) + Traefik network/entrypoint/cert-resolver by inspecting the running proxy container. Env vars now only act as optional overrides. Live vs simulation logged with the reason. |

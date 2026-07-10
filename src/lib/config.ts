@@ -22,11 +22,12 @@ export const CONFIG = {
   baseDomain: env("MYTHIC_BASE_DOMAIN", "MAGIC_DEPLOY_BASE_DOMAIN") || "localtest.me",
   defaultPort: Number(env("MYTHIC_DEFAULT_PORT", "MAGIC_DEPLOY_DEFAULT_PORT") || 3000),
   traefikNetwork: env("MYTHIC_TRAEFIK_NETWORK", "MAGIC_DEPLOY_TRAEFIK_NETWORK") || "traefik",
-  // Traefik entrypoint + cert resolver names. Coolify's bundled Traefik uses
-  // `http`/`https` entrypoints, so set MYTHIC_TRAEFIK_ENTRYPOINT=https when routing
-  // through an existing Coolify proxy instead of MYTHIC's own docker-compose Traefik.
-  traefikEntrypoint: env("MYTHIC_TRAEFIK_ENTRYPOINT") || "websecure",
-  traefikCertResolver: env("MYTHIC_TRAEFIK_CERTRESOLVER") || "letsencrypt",
+  // Traefik settings are AUTO-DETECTED at runtime from the running proxy (see
+  // discovery.ts). These overrides are only read when you want to force a value;
+  // leave them unset for zero-config operation.
+  traefikNetworkOverride: env("MYTHIC_TRAEFIK_NETWORK", "MAGIC_DEPLOY_TRAEFIK_NETWORK"),
+  traefikEntrypointOverride: env("MYTHIC_TRAEFIK_ENTRYPOINT"),
+  traefikCertResolverOverride: env("MYTHIC_TRAEFIK_CERTRESOLVER"),
   forceSimulation: env("MYTHIC_SIMULATION", "MAGIC_DEPLOY_SIMULATION") === "true",
 } as const;
 

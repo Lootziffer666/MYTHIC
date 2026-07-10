@@ -1,8 +1,14 @@
 import Docker from "dockerode";
 import { CONFIG } from "./config";
+import { resolveDockerClient, resolveTraefikSetup } from "./discovery";
 
 let client: Docker | null = null;
 
+/**
+ * Synchronous accessor. Prefers the auto-discovered client (set once
+ * dockerAvailable() has run), and falls back to the configured/default socket
+ * so existing synchronous call sites keep working.
+ */
 export function getDocker(): Docker {
   if (!client) {
     if (CONFIG.dockerSocket.startsWith("unix://")) {
@@ -16,9 +22,16 @@ export function getDocker(): Docker {
 }
 
 export async function dockerAvailable(): Promise<boolean> {
+  // Auto-detect the working socket across common locations. Once found, cache
+  // it as the module client so all sync getDocker() callers use it too.
+  const resolved = await resolveDockerClient();
+  if (resolved) {
+    client = resolved;
+    return true;
+  }
+  // Last resort: try the configured/default socket directly.
   try {
-    const d = getDocker();
-    await d.ping();
+    await getDocker().ping();
     return true;
   } catch {
     return false;
@@ -31,17 +44,24 @@ export interface StartContainerOpts {
   domain: string;
   port: number;
   env: Record<string, string>;
-  network: string;
+  /** Optional: force a network. Left empty, MYTHIC auto-detects the proxy network. */
+  network?: string;
 }
 
-function traefikLabels(name: string, domain: string, port: number): Record<string, string> {
+function traefikLabels(
+  name: string,
+  domain: string,
+  port: number,
+  entrypoint: string,
+  certResolver: string
+): Record<string, string> {
   const safe = name.replace(/[^a-z0-9]/gi, "").toLowerCase();
   return {
     "traefik.enable": "true",
     [`traefik.http.routers.${safe}.rule`]: `Host(\`${domain}\`)`,
-    [`traefik.http.routers.${safe}.entrypoints`]: CONFIG.traefikEntrypoint,
+    [`traefik.http.routers.${safe}.entrypoints`]: entrypoint,
     [`traefik.http.routers.${safe}.tls`]: "true",
-    [`traefik.http.routers.${safe}.tls.certresolver`]: CONFIG.traefikCertResolver,
+    [`traefik.http.routers.${safe}.tls.certresolver`]: certResolver,
     [`traefik.http.services.${safe}.loadbalancer.server.port`]: String(port),
   };
 }
@@ -58,8 +78,18 @@ export async function startContainer(opts: StartContainerOpts): Promise<string> 
     /* not found */
   }
 
+  // Zero-config: mirror the running proxy's network + entrypoint + resolver.
+  const traefik = await resolveTraefikSetup();
+  const network = opts.network || traefik.network;
+
   const env = Object.entries(opts.env || {}).map(([k, v]) => `${k}=${v}`);
-  const labels = traefikLabels(opts.name, opts.domain, opts.port);
+  const labels = traefikLabels(
+    opts.name,
+    opts.domain,
+    opts.port,
+    traefik.entrypoint,
+    traefik.certResolver
+  );
 
   const container = await d.createContainer({
     name: containerName,
@@ -69,7 +99,7 @@ export async function startContainer(opts: StartContainerOpts): Promise<string> 
     ExposedPorts: { [`${opts.port}/tcp`]: {} },
     HostConfig: {
       RestartPolicy: { Name: "unless-stopped" },
-      NetworkMode: opts.network,
+      NetworkMode: network,
     },
   });
 
