@@ -1,4 +1,5 @@
 import type { AnalysisResult } from "./types";
+import { getDefaultProvider, getProviderSecret, listProviders } from "./settings";
 
 export interface AiFix {
   diagnosis: string;
@@ -10,13 +11,13 @@ export interface AiFix {
   dockerfile?: string;
 }
 
-interface AiConfig {
+export interface AiConfig {
   baseUrl: string;
   apiKey: string;
   model: string;
 }
 
-export function getAiConfig(): AiConfig | null {
+function envConfig(): AiConfig | null {
   const apiKey = process.env.AI_API_KEY;
   if (!apiKey) return null;
   return {
@@ -26,8 +27,30 @@ export function getAiConfig(): AiConfig | null {
   };
 }
 
+/**
+ * Resolve the LLM config. BYOK settings win (stored locally + encrypted);
+ * process env vars remain a convenience fallback.
+ */
+export function getAiConfig(): AiConfig | null {
+  const env = envConfig();
+  if (env) return env;
+
+  const provider = getDefaultProvider() ?? listProviders()[0];
+  if (!provider) return null;
+  const secret = getProviderSecret(provider.id);
+  if (!secret) return null;
+  return { baseUrl: provider.baseUrl, apiKey: secret, model: provider.model };
+}
+
 export function aiConfigured(): boolean {
   return getAiConfig() !== null;
+}
+
+/** Where the active config came from (for UI display / logs). */
+export function aiConfigSource(): "env" | "byok" | "none" {
+  if (envConfig()) return "env";
+  if (getDefaultProvider() ?? listProviders()[0]) return "byok";
+  return "none";
 }
 
 const SYSTEM_PROMPT = `You are a senior DevOps engineer operating "MYTHIC",

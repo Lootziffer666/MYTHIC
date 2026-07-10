@@ -19,6 +19,9 @@ export default function Home() {
           <Link href="/dashboard" className="rounded-lg border border-neutral-800 px-3 py-1.5 hover:border-neutral-600 hover:text-white">
             Dashboard
           </Link>
+          <Link href="/settings" className="rounded-lg border border-neutral-800 px-3 py-1.5 hover:border-neutral-600 hover:text-white">
+            Settings
+          </Link>
         </nav>
       </header>
 

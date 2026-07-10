@@ -31,9 +31,29 @@ function getDb(): Database.Database {
       createdAt INTEGER NOT NULL,
       updatedAt INTEGER NOT NULL
     );
+
+    CREATE TABLE IF NOT EXISTS settings (
+      key TEXT PRIMARY KEY,
+      value TEXT NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS llm_providers (
+      id TEXT PRIMARY KEY,
+      name TEXT NOT NULL,
+      base_url TEXT NOT NULL,
+      model TEXT NOT NULL,
+      api_key_iv TEXT NOT NULL,
+      api_key_tag TEXT NOT NULL,
+      api_key_data TEXT NOT NULL,
+      is_default INTEGER NOT NULL DEFAULT 0,
+      created_at INTEGER NOT NULL
+    );
   `);
   return db;
 }
+
+/** Exposed for sibling modules (e.g. settings.ts) that need the raw DB handle. */
+export { getDb };
 
 type Row = {
   id: string;
@@ -142,3 +162,8 @@ export const store = {
     getDb().prepare("DELETE FROM deployments WHERE id = ?").run(id);
   },
 };
+
+// --- simple key/value settings, re-exported so callers can use db.ts alone ---
+import { getSetting as _getSetting, setSetting as _setSetting } from "./settings";
+export const getSetting = _getSetting;
+export const setSetting = _setSetting;
