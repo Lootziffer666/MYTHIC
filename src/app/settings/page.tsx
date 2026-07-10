@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 
 interface Provider {
@@ -25,17 +25,31 @@ export default function SettingsPage() {
   const [apiKey, setApiKey] = useState("");
   const [makeDefault, setMakeDefault] = useState(true);
 
-  const load = useCallback(async () => {
+  async function load() {
     const res = await fetch("/api/settings");
     const data = await res.json();
     setProviders(data.providers || []);
     setEncryptedAtRest(!!data.encryptedAtRest);
     setAiSource(data.aiSource || "none");
-  }, []);
+  }
 
   useEffect(() => {
-    load();
-  }, [load]);
+    let cancelled = false;
+    fetch("/api/settings")
+      .then((res) => res.json())
+      .then((data) => {
+        if (cancelled) return;
+        setProviders(data.providers || []);
+        setEncryptedAtRest(!!data.encryptedAtRest);
+        setAiSource(data.aiSource || "none");
+      })
+      .catch(() => {
+        if (!cancelled) setAiSource("unavailable");
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   async function save(e: React.FormEvent) {
     e.preventDefault();
@@ -136,6 +150,32 @@ export default function SettingsPage() {
           Providers: <span className="text-white">{providers.length}</span>
         </span>
       </div>
+
+      <section className="glass mt-6 rounded-2xl p-5">
+        <h2 className="text-sm font-semibold uppercase tracking-wide text-neutral-400">AI change scope</h2>
+        <p className="mt-2 text-sm text-neutral-300">
+          MYTHIC&apos;s AI assist is intentionally narrow: it may propose or apply deployment metadata fixes,
+          but it must not rewrite application code or touch host-level Docker/Traefik configuration without an explicit operator action.
+        </p>
+        <div className="mt-4 grid gap-3 sm:grid-cols-2">
+          <div className="rounded-xl border border-emerald-400/20 bg-emerald-500/10 p-3">
+            <div className="text-sm font-semibold text-emerald-200">Allowed</div>
+            <ul className="mt-2 list-disc space-y-1 pl-4 text-xs text-emerald-100/80">
+              <li>build command, start command, app port</li>
+              <li>runtime environment suggestions</li>
+              <li>Dockerfile fallback hints for the deployed repo</li>
+            </ul>
+          </div>
+          <div className="rounded-xl border border-rose-400/20 bg-rose-500/10 p-3">
+            <div className="text-sm font-semibold text-rose-200">Blocked by default</div>
+            <ul className="mt-2 list-disc space-y-1 pl-4 text-xs text-rose-100/80">
+              <li>host Docker socket, Traefik, DNS provider tokens</li>
+              <li>source-code rewrites outside deploy metadata</li>
+              <li>secrets, API keys, or database contents</li>
+            </ul>
+          </div>
+        </div>
+      </section>
 
       {msg && (
         <pre className="mt-4 whitespace-pre-wrap rounded-xl border border-neutral-800 bg-neutral-900/60 p-3 text-sm text-cyan-200">

@@ -85,7 +85,6 @@ func hostKeyFingerprint(ip string) (string, error) {
 	}
 	cfg := &ssh.ClientConfig{
 		User:            "root",
-		Auth:            []ssh.AuthMethod{ssh.None()},
 		HostKeyCallback: cb,
 		Timeout:         10 * time.Second,
 	}
@@ -145,7 +144,7 @@ func createBootstrapUser(ip, keyPath, pubKey string) (string, error) {
 		fmt.Sprintf("chmod 440 /etc/sudoers.d/%s", user),
 	}
 	for _, c := range cmds {
-		if _, err := runSSH(ip, "root", keyPath, c); err != nil {
+		if _, err := runSSHSeam(ip, "root", keyPath, c); err != nil {
 			return "", fmt.Errorf("bootstrap step failed: %w", err)
 		}
 	}
@@ -162,7 +161,7 @@ func removeBootstrapUser(ip, keyPath, user string) error {
 		fmt.Sprintf("userdel -r -f %s 2>/dev/null || true", user),
 	}
 	for _, c := range cmds {
-		if _, err := runSSH(ip, "root", keyPath, c); err != nil {
+		if _, err := runSSHSeam(ip, "root", keyPath, c); err != nil {
 			return fmt.Errorf("bootstrap removal incomplete: %w", err)
 		}
 	}
@@ -178,5 +177,9 @@ func randomWorkDir() (string, error) {
 	if err := os.Chmod(dir, 0o700); err != nil {
 		return "", err
 	}
-	return filepath.Join(dir, "work"), nil
+	work := filepath.Join(dir, "work")
+	if err := os.Mkdir(work, 0o700); err != nil {
+		return "", err
+	}
+	return work, nil
 }

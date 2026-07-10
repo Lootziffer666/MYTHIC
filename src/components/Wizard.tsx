@@ -45,14 +45,8 @@ export default function Wizard() {
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const baseDomain = process.env.NEXT_PUBLIC_BASE_DOMAIN || "localtest.me";
+  const publicIp = process.env.NEXT_PUBLIC_MYTHIC_PUBLIC_IP || process.env.NEXT_PUBLIC_SERVER_IP || "";
 
-  useEffect(() => {
-    if (repoUrl) {
-      const n = repoName(repoUrl);
-      if (!name) setName(slug(n));
-      if (!domain) setDomain(`${slug(n)}.${baseDomain}`);
-    }
-  }, [repoUrl, name, domain, baseDomain]);
 
   const startPolling = useCallback((id: string) => {
     if (pollRef.current) clearInterval(pollRef.current);
@@ -173,7 +167,13 @@ export default function Wizard() {
             className="input"
             placeholder="https://github.com/user/my-app.git"
             value={repoUrl}
-            onChange={(e) => setRepoUrl(e.target.value)}
+            onChange={(e) => {
+              const value = e.target.value;
+              setRepoUrl(value);
+              const suggestedName = slug(repoName(value));
+              if (!name) setName(suggestedName);
+              if (!domain) setDomain(`${suggestedName}.${baseDomain}`);
+            }}
           />
           <div className="grid grid-cols-2 gap-3">
             <div>
@@ -205,6 +205,7 @@ export default function Wizard() {
           <Divider />
           <Label>Domain</Label>
           <input className="input" value={domain} onChange={(e) => setDomain(e.target.value)} />
+          <DnsHint domain={domain} publicIp={publicIp} />
           <div className="grid grid-cols-2 gap-3">
             <div>
               <Label>Port</Label>
@@ -406,6 +407,22 @@ function EnvEditor({
       <button className="btn-ghost text-xs" onClick={() => onChange([...pairs, { key: "", value: "" }])}>
         + Add variable
       </button>
+    </div>
+  );
+}
+
+
+function DnsHint({ domain, publicIp }: { domain: string; publicIp: string }) {
+  const host = domain.split(".")[0] || "app";
+  return (
+    <div className="my-3 rounded-xl border border-cyan-400/20 bg-cyan-500/10 p-3 text-xs text-cyan-50/85">
+      <div className="font-semibold text-cyan-200">DNS before deploy</div>
+      <p className="mt-1 text-cyan-50/70">
+        Create an A-record for this app before Let&apos;s Encrypt runs. Hetzner DNS can be automated later with a scoped token; external providers should stay manual or least-privilege.
+      </p>
+      <div className="mt-2 font-mono text-cyan-100">
+        {host} → A → {publicIp || "<this server&apos;s public IPv4>"}
+      </div>
     </div>
   );
 }

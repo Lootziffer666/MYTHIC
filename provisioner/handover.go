@@ -40,11 +40,11 @@ func injectBrainIntoMythic(mythicURL, adminToken, llmKey, llmBase, llmModel stri
 		model = "gpt-4o-mini"
 	}
 	body, _ := json.Marshal(map[string]interface{}{
-		"action":   "createProvider",
-		"name":     "Provisioned (brain)",
-		"baseUrl":  base,
-		"model":    model,
-		"apiKey":   llmKey,
+		"action":    "createProvider",
+		"name":      "Provisioned (brain)",
+		"baseUrl":   base,
+		"model":     model,
+		"apiKey":    llmKey,
 		"isDefault": true,
 	})
 	req, err := http.NewRequest("POST", mythicURL+"/api/settings", bytes.NewReader(body))
@@ -79,6 +79,20 @@ func waitForMythic(mythicURL string, timeout time.Duration) (bool, error) {
 		time.Sleep(3 * time.Second)
 	}
 	return false, nil
+}
+
+func waitForMythicSeam(mythicURL string, timeout time.Duration) (bool, error) {
+	if hookWaitMythic != nil {
+		return hookWaitMythic(mythicURL)
+	}
+	return waitForMythic(mythicURL, timeout)
+}
+
+func injectBrainSeam(mythicURL, adminToken, llmKey, llmBase, llmModel string) error {
+	if hookInjectBrain != nil {
+		return hookInjectBrain(mythicURL, adminToken, llmKey, llmBase, llmModel)
+	}
+	return injectBrainIntoMythic(mythicURL, adminToken, llmKey, llmBase, llmModel)
 }
 
 // saveHandover writes the package; if pass is set it is encrypted (age-style

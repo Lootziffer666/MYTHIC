@@ -4,12 +4,14 @@ package main
 // In production these are nil and the real implementations are used.
 
 var (
-	hookRunSSH        func(ip, user, keyPath, cmd string) (string, error)
+	hookRunSSH          func(ip, user, keyPath, cmd string) (string, error)
 	hookHostFingerprint func(ip string) (string, error)
-	hookWaitSSH       func(ip, keyPath string) error
-	hookInstall       func(ip, keyPath, user, domain string) error
-	hookWaitContainer func(ip, keyPath, user string) error
-	hookUserGone      func(ip, keyPath, user string) bool
+	hookWaitSSH         func(ip, keyPath string) error
+	hookInstall         func(ip, keyPath, user, domain string) error
+	hookWaitContainer   func(ip, keyPath, user string) error
+	hookUserGone        func(ip, keyPath, user string) bool
+	hookWaitMythic      func(mythicURL string) (bool, error)
+	hookInjectBrain     func(mythicURL, adminToken, llmKey, llmBase, llmModel string) error
 	// forceExternalHealthFail lets tests trigger a deterministic failure at the
 	// external HTTPS healthcheck stage (no real network required).
 	forceExternalHealthFail bool

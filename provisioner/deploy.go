@@ -45,7 +45,7 @@ const composeYAML = `services:
       - "mythic_data:/app/.deploy"
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.mythic.rule=Host(`%DOMAIN%`)"
+      - "traefik.http.routers.mythic.rule=Host("%DOMAIN%")"
       - "traefik.http.routers.mythic.entrypoints=websecure"
       - "traefik.http.routers.mythic.tls=true"
       - "traefik.http.routers.mythic.tls.certresolver=letsencrypt"

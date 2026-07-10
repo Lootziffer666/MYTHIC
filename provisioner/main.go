@@ -71,20 +71,20 @@ func main() {
 	}
 
 	cfg := Config{
-		Provider:          ProviderConfig{Kind: *provider, Token: *hands, APIURL: *apiURL},
-		Brain:             BrainConfig{LLMKey: *brain, LLMBase: *brainBase, LLMModel: *brainModel},
-		ServerName:        *serverName,
-		ServerType:        *stype,
-		Region:            *region,
-		Image:             *image,
-		Domain:            *domain,
-		SSHPublicKey:      *sshPub,
-		KeepOnFail:        *keepFail,
-		DestroyOnFail:     *destroyFail,
-		DryRun:            *dryRun,
-		ExportHandover:    *exportHand,
-		HandoverPass:      *handPass,
-		StateFile:         *stateFile,
+		Provider:       ProviderConfig{Kind: *provider, Token: *hands, APIURL: *apiURL},
+		Brain:          BrainConfig{LLMKey: *brain, LLMBase: *brainBase, LLMModel: *brainModel},
+		ServerName:     *serverName,
+		ServerType:     *stype,
+		Region:         *region,
+		Image:          *image,
+		Domain:         *domain,
+		SSHPublicKey:   *sshPub,
+		KeepOnFail:     *keepFail,
+		DestroyOnFail:  *destroyFail,
+		DryRun:         *dryRun,
+		ExportHandover: *exportHand,
+		HandoverPass:   *handPass,
+		StateFile:      *stateFile,
 	}
 
 	// --cleanup

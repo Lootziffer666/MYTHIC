@@ -25,6 +25,8 @@ func setupMocks(t *testing.T) func() {
 	hookInstall = func(ip, keyPath, user, domain string) error { return nil }
 	hookWaitContainer = func(ip, keyPath, user string) error { return nil }
 	hookUserGone = func(ip, keyPath, user string) bool { return true }
+	hookWaitMythic = func(mythicURL string) (bool, error) { return true, nil }
+	hookInjectBrain = func(mythicURL, adminToken, llmKey, llmBase, llmModel string) error { return nil }
 	return func() {
 		hookRunSSH = nil
 		hookHostFingerprint = nil
@@ -32,6 +34,8 @@ func setupMocks(t *testing.T) func() {
 		hookInstall = nil
 		hookWaitContainer = nil
 		hookUserGone = nil
+		hookWaitMythic = nil
+		hookInjectBrain = nil
 		forceExternalHealthFail = false
 	}
 }
@@ -130,11 +134,11 @@ func TestResumePath(t *testing.T) {
 	dir := t.TempDir()
 	stateFile := filepath.Join(dir, "state.json")
 	seed := StageState{
-		Phase:             "create-server",
+		Phase:              "create-server",
 		ProviderResourceID: "server-1001",
-		ServerIP:          "203.0.113.10",
-		ServerName:        "mythic-test",
-		CreatedAt:         "2026-01-01T00:00:00Z",
+		ServerIP:           "203.0.113.10",
+		ServerName:         "mythic-test",
+		CreatedAt:          "2026-01-01T00:00:00Z",
 	}
 	b, _ := json.MarshalIndent(seed, "", "  ")
 	_ = os.WriteFile(stateFile, b, 0o600)

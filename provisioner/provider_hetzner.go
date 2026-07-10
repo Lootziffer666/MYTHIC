@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"os"
 )
 
 // hetznerProvider talks to the Hetzner Cloud API using only net/http.
@@ -69,10 +68,12 @@ func (h *hetznerProvider) FindServer(name string) (string, string, error) {
 	}
 	var out struct {
 		Servers []struct {
-			ID     int    `json:"id"`
-			Name   string `json:"name"`
+			ID        int    `json:"id"`
+			Name      string `json:"name"`
 			PublicNet struct {
-				IPv4 struct{ IP string `json:"ip"` } `json:"ipv4"`
+				IPv4 struct {
+					IP string `json:"ip"`
+				} `json:"ipv4"`
 			} `json:"public_net"`
 		} `json:"servers"`
 	}
@@ -89,12 +90,12 @@ func (h *hetznerProvider) FindServer(name string) (string, string, error) {
 
 func (h *hetznerProvider) CreateServer(name, serverType, region, image, sshPublicKey string) (string, string, error) {
 	body := map[string]interface{}{
-		"name":     name,
+		"name":        name,
 		"server_type": serverType,
-		"location": region,
-		"image":    image,
-		"ssh_keys": []string{sshPublicKey},
-		"public_net": map[string]interface{}{"enable_ipv4": true},
+		"location":    region,
+		"image":       image,
+		"ssh_keys":    []string{sshPublicKey},
+		"public_net":  map[string]interface{}{"enable_ipv4": true},
 	}
 	data, code, err := h.do("POST", "/servers", body)
 	if err != nil {
@@ -105,9 +106,11 @@ func (h *hetznerProvider) CreateServer(name, serverType, region, image, sshPubli
 	}
 	var out struct {
 		Server struct {
-			ID        int    `json:"id"`
+			ID        int `json:"id"`
 			PublicNet struct {
-				IPv4 struct{ IP string `json:"ip"` } `json:"ipv4"`
+				IPv4 struct {
+					IP string `json:"ip"`
+				} `json:"ipv4"`
 			} `json:"public_net"`
 		} `json:"server"`
 	}
