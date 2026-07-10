@@ -1,13 +1,15 @@
 package main
 
+import "fmt"
+
 // mockProvider is a deterministic, dependency-free provider used by tests and
 // by `provisioner --provider mock --dry-run`. It performs NO network calls.
 type mockProvider struct {
-	failCreate    bool
-	failActive    bool
-	resourceID    string
-	ip            string
-	destroyed     bool
+	failCreate bool
+	failActive bool
+	resourceID string
+	ip         string
+	destroyed  bool
 }
 
 func newMockProvider() *mockProvider {

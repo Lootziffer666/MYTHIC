@@ -46,13 +46,6 @@ export default function Wizard() {
 
   const baseDomain = process.env.NEXT_PUBLIC_BASE_DOMAIN || "localtest.me";
 
-  useEffect(() => {
-    if (repoUrl) {
-      const n = repoName(repoUrl);
-      if (!name) setName(slug(n));
-      if (!domain) setDomain(`${slug(n)}.${baseDomain}`);
-    }
-  }, [repoUrl, name, domain, baseDomain]);
 
   const startPolling = useCallback((id: string) => {
     if (pollRef.current) clearInterval(pollRef.current);
@@ -173,7 +166,13 @@ export default function Wizard() {
             className="input"
             placeholder="https://github.com/user/my-app.git"
             value={repoUrl}
-            onChange={(e) => setRepoUrl(e.target.value)}
+            onChange={(e) => {
+              const value = e.target.value;
+              setRepoUrl(value);
+              const suggestedName = slug(repoName(value));
+              if (!name) setName(suggestedName);
+              if (!domain) setDomain(`${suggestedName}.${baseDomain}`);
+            }}
           />
           <div className="grid grid-cols-2 gap-3">
             <div>

@@ -13,11 +13,11 @@ import (
 // recovery path.
 
 type Provisioner struct {
-	cfg    Config
-	state  StageState
-	work   string
-	key    *sshKeyPair
-	keyFp  string // temp key file path
+	cfg   Config
+	state StageState
+	work  string
+	key   *sshKeyPair
+	keyFp string // temp key file path
 }
 
 func newProvisioner(cfg Config) (*Provisioner, error) {
@@ -185,12 +185,12 @@ func (p *Provisioner) Run() (Handover, *FailResult) {
 		if forceExternalHealthFail {
 			return Handover{}, fail("External HTTPS healthcheck", "simulated external check failure", "bootstrap retained for recovery; rerun --resume")
 		}
-		ok2, werr := waitForMythic(mythicURL, 3*time.Minute)
+		ok2, werr := waitForMythicSeam(mythicURL, 3*time.Minute)
 		if !ok2 {
 			return Handover{}, fail("External HTTPS healthcheck", fmt.Sprintf("%v", werr), "bootstrap retained for recovery; rerun --resume")
 		}
 		// inject "brain" into MYTHIC's secret store, then forget it
-		if ierr := injectBrainIntoMythic(mythicURL, adminToken, p.cfg.Brain.LLMKey, p.cfg.Brain.LLMBase, p.cfg.Brain.LLMModel); ierr != nil {
+		if ierr := injectBrainSeam(mythicURL, adminToken, p.cfg.Brain.LLMKey, p.cfg.Brain.LLMBase, p.cfg.Brain.LLMModel); ierr != nil {
 			log.warn("LLM key injection skipped: " + ierr.Error())
 		}
 	}
@@ -200,14 +200,14 @@ func (p *Provisioner) Run() (Handover, *FailResult) {
 
 	// 17-18. handover package
 	h := Handover{
-		ServerIP:            ip,
-		ServerHostname:      p.cfg.Domain,
-		MythicURL:           mythicURL,
-		AdminToken:          adminToken,
-		SSHHostFingerprint:  fingerprint,
-		ProviderResourceID:  rid,
-		ProvisionedAt:       time.Now().UTC().Format(time.RFC3339),
-		HealthcheckStatus:   "passed",
+		ServerIP:             ip,
+		ServerHostname:       p.cfg.Domain,
+		MythicURL:            mythicURL,
+		AdminToken:           adminToken,
+		SSHHostFingerprint:   fingerprint,
+		ProviderResourceID:   rid,
+		ProvisionedAt:        time.Now().UTC().Format(time.RFC3339),
+		HealthcheckStatus:    "passed",
 		BootstrapUserRemoved: false,
 		TemporaryKeyRemoved:  false,
 		CleanupVerified:      false,

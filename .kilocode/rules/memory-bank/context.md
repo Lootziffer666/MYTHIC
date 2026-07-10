@@ -12,6 +12,9 @@ It runs in **live mode** when Docker + nixpacks are present, and a **simulation 
 
 ## Recently Completed
 
+- [x] Repository onboarding README: documented MYTHIC positioning, quick start, configuration, architecture, development commands, and production-hardening priorities; added `public/.gitkeep` so Dockerfile public asset copy has a stable source.
+- [x] Fixed current ESLint blockers in Settings and Wizard client components so lint/typecheck/build can pass again.
+- [x] Repaired provisioner compile/test blockers: compose label quoting, missing imports/state fields, host-key handshake auth, temp work-dir creation, and test seams for SSH/health/injection.
 - [x] Multi-step Wizard UI (Connect → Detect → Deploy → Live) with live log polling
 - [x] Deployment engine (`src/lib/engine.ts`): orchestrates all 4 phases + job queue + append logs
 - [x] Ingestion: `git clone` with default-branch fallback (`src/lib/git.ts`)
@@ -58,3 +61,4 @@ It runs in **live mode** when Docker + nixpacks are present, and a **simulation 
 | Now | **Zero-config discovery** (`src/lib/discovery.ts`): auto-detects Docker socket (multiple candidate paths) + Traefik network/entrypoint/cert-resolver by inspecting the running proxy container. Env vars now only act as optional overrides. Live vs simulation logged with the reason. |
 | Now | **BYOK / LLM support**: local encrypted settings store (`crypto.ts` AES-256-GCM, `settings.ts` + `llm_providers` table), `/api/settings` (GET/POST manage providers), `/api/llm/chat` local BYOK proxy, Settings UI page (`/settings`) with provider CRUD + connection test, `ai.ts` reads default provider from store (env fallback). DSGVO: no telemetry, keys encrypted at rest, only egress is user's own LLM base URL. |
 | Now | **MYTHIC Provisioner** (Go, `provisioner/`): stateless single-binary that creates a server, installs MYTHIC via compose (docker.sock mounted), runs real health checks, emits one-time handover, then removes bootstrap user + temp SSH key. Brain=LLM key, Hands=provider token. Hetzner adapter (net/http) + mock adapter; tests Happy/Failure/Resume. Honest security boundaries documented (no "DSGVO guaranteed" claims). |
+| Now | Added root `README.md` for first-time operators and fixed React ESLint violations in `src/app/settings/page.tsx` and `src/components/Wizard.tsx`; `bun typecheck`, `bun lint`, `bun run build`, and `cd provisioner && go test ./...` pass. |

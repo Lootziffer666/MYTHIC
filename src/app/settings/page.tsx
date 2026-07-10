@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 
 interface Provider {
@@ -25,17 +25,31 @@ export default function SettingsPage() {
   const [apiKey, setApiKey] = useState("");
   const [makeDefault, setMakeDefault] = useState(true);
 
-  const load = useCallback(async () => {
+  async function load() {
     const res = await fetch("/api/settings");
     const data = await res.json();
     setProviders(data.providers || []);
     setEncryptedAtRest(!!data.encryptedAtRest);
     setAiSource(data.aiSource || "none");
-  }, []);
+  }
 
   useEffect(() => {
-    load();
-  }, [load]);
+    let cancelled = false;
+    fetch("/api/settings")
+      .then((res) => res.json())
+      .then((data) => {
+        if (cancelled) return;
+        setProviders(data.providers || []);
+        setEncryptedAtRest(!!data.encryptedAtRest);
+        setAiSource(data.aiSource || "none");
+      })
+      .catch(() => {
+        if (!cancelled) setAiSource("unavailable");
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   async function save(e: React.FormEvent) {
     e.preventDefault();
