@@ -29,6 +29,7 @@ services:
     container_name: mythic
     environment:
       - MYTHIC_BASE_DOMAIN=${MYTHIC_BASE_DOMAIN:-example.com}
+      - NEXT_PUBLIC_MYTHIC_PUBLIC_IP=${MYTHIC_PUBLIC_IP:-}
       - MYTHIC_TRAEFIK_NETWORK=traefik
       - DOCKER_HOST=unix:///var/run/docker.sock
     volumes:

@@ -41,11 +41,16 @@ MYTHIC works without most manual configuration by inspecting Docker and Traefik 
 | `MYTHIC_TRAEFIK_CERT_RESOLVER` | auto-detected / `letsencrypt` | Force the Traefik certificate resolver |
 | `DOCKER_HOST` | `unix:///var/run/docker.sock` | Docker socket/API endpoint |
 | `MYTHIC_AI_AUTOFIX` | `false` | Enable automatic AI repair after failed builds |
+| `MYTHIC_PUBLIC_IP` | unset | Optional public IPv4 shown in DNS setup hints |
 | `AI_API_KEY` | unset | Optional env fallback for AI auto-fix |
 | `AI_BASE_URL` | OpenAI-compatible default | Optional OpenAI-compatible API base URL |
 | `AI_MODEL` | provider default | Optional model for AI auto-fix |
 
 You can also add LLM providers in the Settings UI. Keys are stored locally and encrypted at rest when `MYTHIC_SECRET` or `MAGIC_DEPLOY_SECRET` is configured.
+
+## DNS setup
+
+For a Hetzner server, the safe default is simple: point `deploy.<base-domain>` and `*.<base-domain>` A-records at the server's public IPv4. For external DNS providers, MYTHIC should only automate records with a narrowly scoped DNS token; full account or cloud tokens are intentionally out of scope.
 
 ## Architecture
 

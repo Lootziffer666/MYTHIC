@@ -15,6 +15,7 @@ It runs in **live mode** when Docker + nixpacks are present, and a **simulation 
 - [x] Repository onboarding README: documented MYTHIC positioning, quick start, configuration, architecture, development commands, and production-hardening priorities; added `public/.gitkeep` so Dockerfile public asset copy has a stable source.
 - [x] Fixed current ESLint blockers in Settings and Wizard client components so lint/typecheck/build can pass again.
 - [x] Repaired provisioner compile/test blockers: compose label quoting, missing imports/state fields, host-key handshake auth, temp work-dir creation, and test seams for SSH/health/injection.
+- [x] Added Docker host overview to the dashboard, DNS readiness guidance for Hetzner/external providers, wizard DNS A-record hints, and visible AI change-scope boundaries in Settings.
 - [x] Multi-step Wizard UI (Connect → Detect → Deploy → Live) with live log polling
 - [x] Deployment engine (`src/lib/engine.ts`): orchestrates all 4 phases + job queue + append logs
 - [x] Ingestion: `git clone` with default-branch fallback (`src/lib/git.ts`)

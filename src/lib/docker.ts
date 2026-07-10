@@ -141,3 +141,58 @@ export async function containerRunning(containerId: string): Promise<boolean> {
     return false;
   }
 }
+
+
+export interface DockerContainerSummary {
+  id: string;
+  name: string;
+  image: string;
+  state: string;
+  status: string;
+  domains: string[];
+  ports: string[];
+  managedByMythic: boolean;
+}
+
+function labelDomains(labels: Record<string, string> | undefined): string[] {
+  const values = Object.values(labels ?? {});
+  const domains = new Set<string>();
+  for (const value of values) {
+    const matches = value.matchAll(/Host\((?:`|\")([^`\"]+)(?:`|\")\)/g);
+    for (const match of matches) domains.add(match[1]);
+  }
+  return [...domains];
+}
+
+export async function listDockerContainers(): Promise<{ available: boolean; containers: DockerContainerSummary[]; error?: string }> {
+  const available = await dockerAvailable();
+  if (!available) return { available: false, containers: [], error: "Docker socket not reachable" };
+
+  try {
+    const containers = await getDocker().listContainers({ all: true });
+    return {
+      available: true,
+      containers: containers.map((c) => ({
+        id: c.Id,
+        name: (c.Names?.[0] || c.Id.slice(0, 12)).replace(/^\//, ""),
+        image: c.Image,
+        state: c.State,
+        status: c.Status,
+        domains: labelDomains(c.Labels),
+        ports: (c.Ports || []).map((p) => {
+          const host = p.PublicPort ? `${p.IP || "0.0.0.0"}:${p.PublicPort}->` : "";
+          return `${host}${p.PrivatePort}/${p.Type}`;
+        }),
+        managedByMythic:
+          (c.Names || []).some((name) => name.includes("mythic")) ||
+          Object.keys(c.Labels || {}).some((key) => key.startsWith("traefik.http.routers.")),
+      })),
+    };
+  } catch (err) {
+    return {
+      available: false,
+      containers: [],
+      error: err instanceof Error ? err.message : String(err),
+    };
+  }
+}
