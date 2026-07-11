@@ -17,6 +17,7 @@ It runs in **live mode** when Docker + nixpacks are present, and a **simulation 
 - [x] Repaired provisioner compile/test blockers: compose label quoting, missing imports/state fields, host-key handshake auth, temp work-dir creation, and test seams for SSH/health/injection.
 - [x] Added Docker host overview to the dashboard, DNS readiness guidance for Hetzner/external providers, wizard DNS A-record hints, and visible AI change-scope boundaries in Settings.
 - [x] Completed the interrupted landing/provisioner patch: fixed provisioner Traefik label quoting, added the cinematic MYTHIC landing page, and added the procedural WebM generator scaffold under `scripts/generate_mythic_videos.py`.
+- [x] Elevated the landing page with a client-side raw WebGL2 shader/particle portal, premium MYTHIC hero composition, proof cards, and conversion-focused deployment forge while preserving progressive enhancement and build safety.
 - [x] Multi-step Wizard UI (Connect → Detect → Deploy → Live) with live log polling
 - [x] Deployment engine (`src/lib/engine.ts`): orchestrates all 4 phases + job queue + append logs
 - [x] Ingestion: `git clone` with default-branch fallback (`src/lib/git.ts`)
@@ -65,3 +66,4 @@ It runs in **live mode** when Docker + nixpacks are present, and a **simulation 
 | Now | **MYTHIC Provisioner** (Go, `provisioner/`): stateless single-binary that creates a server, installs MYTHIC via compose (docker.sock mounted), runs real health checks, emits one-time handover, then removes bootstrap user + temp SSH key. Brain=LLM key, Hands=provider token. Hetzner adapter (net/http) + mock adapter; tests Happy/Failure/Resume. Honest security boundaries documented (no "DSGVO guaranteed" claims). |
 | Now | Added root `README.md` for first-time operators and fixed React ESLint violations in `src/app/settings/page.tsx` and `src/components/Wizard.tsx`; `bun typecheck`, `bun lint`, `bun run build`, and `cd provisioner && go test ./...` pass. |
 | Now | Resolved the interrupted patch follow-up by restoring valid provisioner compose YAML quoting, implementing the cinematic landing-page UI, and adding a reproducible procedural video generator. |
+| Now | Upgraded the homepage into a high-end MYTHIC launch experience with a raw WebGL2 particle/shader backdrop, stronger hero narrative, proof points, and refined ritual cards. |
