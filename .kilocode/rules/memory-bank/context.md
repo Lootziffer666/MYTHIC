@@ -10,6 +10,18 @@ heuristic fallback), builds a Docker image, and routes it behind **Traefik** wit
 It runs in **live mode** when Docker + nixpacks are present, and a **simulation mode** otherwise
 (used for local/demo, e.g. this sandbox which has neither Docker nor nixpacks installed).
 
+## Next Mission — Final Fable Run
+
+The next implementation run is the production-closure run defined in:
+
+- `.kilocode/rules/memory-bank/FABLE_FINAL_RUN.md`
+
+That document is the source of truth. The run must not fork or rebuild another deployment platform, must not redesign the landing page, and must not expand into a full Coolify replacement.
+
+Priority is the missing trust layer: Project/Release history, webhook auto-deploy, durable evidence and log streaming, health-gated promotion, rollback, encrypted project secrets with redaction, internal-only services, bounded AI repair, deterministic diagnostics, and a mobile-first PWA control surface.
+
+P0 must be complete and green before P1 preview/API/security-advisory work begins. No success claim without tests and demonstrated evidence.
+
 ## Recently Completed
 
 - [x] Repository onboarding README: documented MYTHIC positioning, quick start, configuration, architecture, development commands, and production-hardening priorities; added `public/.gitkeep` so Dockerfile public asset copy has a stable source.
@@ -30,6 +42,7 @@ It runs in **live mode** when Docker + nixpacks are present, and a **simulation 
       build/start/port/env; auto-applied when `MYTHIC_AI_AUTOFIX=true`, manual "✨ Ask AI to fix" button
 - [x] **Coolify CLI**: `scripts/coolify-deploy.sh` POSTs to `/api/v1/applications` to deploy without the UI
 - [x] `docker-compose.yml` (Traefik + app) and `Dockerfile` (installs nixpacks + docker CLI)
+- [x] Competitive re-audit completed and translated into the final Fable production-closure contract.
 
 ## Current Structure
 
@@ -46,6 +59,7 @@ It runs in **live mode** when Docker + nixpacks are present, and a **simulation 
 | `src/app/api/**` | API routes |
 | `scripts/coolify-deploy.sh` | Coolify API automation CLI |
 | `docker-compose.yml` / `Dockerfile` | Traefik reverse proxy + app image |
+| `.kilocode/rules/memory-bank/FABLE_FINAL_RUN.md` | Final production-closure scope, order, tests, and finish contract |
 
 ## Environment Notes
 
@@ -67,3 +81,4 @@ It runs in **live mode** when Docker + nixpacks are present, and a **simulation 
 | Now | Added root `README.md` for first-time operators and fixed React ESLint violations in `src/app/settings/page.tsx` and `src/components/Wizard.tsx`; `bun typecheck`, `bun lint`, `bun run build`, and `cd provisioner && go test ./...` pass. |
 | Now | Resolved the interrupted patch follow-up by restoring valid provisioner compose YAML quoting, implementing the cinematic landing-page UI, and adding a reproducible procedural video generator. |
 | Now | Upgraded the homepage into a high-end MYTHIC launch experience with a raw WebGL2 particle/shader backdrop, stronger hero narrative, proof points, and refined ritual cards. |
+| 2026-07-12 | Re-audited the supplied deployment ecosystem and committed the final Fable production-closure specification. |
