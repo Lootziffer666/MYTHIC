@@ -12,15 +12,23 @@ It runs in **live mode** when Docker + nixpacks are present, and a **simulation 
 
 ## Next Mission — Final Fable Run
 
-The next implementation run is the one-click production-closure run defined in:
+The next implementation run is the one-click production-closure run defined in both mandatory documents:
 
 - `.kilocode/rules/memory-bank/FABLE_FINAL_RUN.md`
+- `.kilocode/rules/memory-bank/PROVISIONER_ENTRY_MODES.md`
 
-That document is the source of truth. The run must not fork or rebuild another deployment platform, must not redesign the landing page, and must not expand into a full Coolify replacement.
+The run must read and follow both. It must not fork or rebuild another deployment platform, redesign the landing page, or expand into a full Coolify replacement.
 
-The **Provisioner is the front door and highest priority**. MYTHIC's differentiator is the complete path from temporary provider credentials to a newly created server, secure MYTHIC installation, DNS/TLS closure, verified service response, removal of temporary access, and human handover. Competing deploy platforms usually begin with an existing server.
+The **Provisioner is the front door and highest priority**, but it now has two equal entry modes:
 
-After the Provisioner path is structurally complete, remaining implementation budget goes to Project/Release history, webhook auto-deploy, durable logs, health-gated promotion, rollback, encrypted project secrets, internal-only services, bounded AI repair, deterministic diagnostics, and a mobile-first PWA control surface.
+1. **Existing machine / homelab** — hostname or IP plus user-approved SSH access; no cloud token, Gmail connection, public IP, or public domain required.
+2. **New Hetzner machine** — provider-backed server creation with the temporary public SSH key registered before server creation; no emailed root password dependency.
+
+Both modes must converge on one shared host-inspection, MYTHIC-installation, health-gated handover, cleanup, and recovery core. Do not duplicate installation logic.
+
+Gmail/Gemini is not part of the mandatory path. It may help the human locate a provider message, but MYTHIC must not require Gmail OAuth. A future narrow, explicit, read-only import helper is P1 at most.
+
+After both Provisioner paths are structurally complete, remaining implementation budget goes to Project/Release history, webhook auto-deploy, durable logs, health-gated promotion, rollback, encrypted project secrets, internal-only services, bounded AI repair, deterministic diagnostics, and a mobile-first PWA control surface.
 
 Fable must not create, expand, repair, or execute verification suites and must not perform manual acceptance work. Existing verification files remain untouched for the later Opus handoff. Fable ends with the exact label **UNVERIFIED HANDOFF TO OPUS**.
 
@@ -46,6 +54,7 @@ Fable must not create, expand, repair, or execute verification suites and must n
 - [x] `docker-compose.yml` (Traefik + app) and `Dockerfile` (installs nixpacks + docker CLI)
 - [x] Competitive re-audit completed and translated into the final Fable production-closure contract.
 - [x] Final contract refocused around the Provisioner; all new verification work deferred to Opus.
+- [x] Provisioner entry modes split into existing-machine/homelab and new-Hetzner paths with one shared installation core.
 
 ## Current Structure
 
@@ -62,8 +71,9 @@ Fable must not create, expand, repair, or execute verification suites and must n
 | `src/app/api/**` | API routes |
 | `scripts/coolify-deploy.sh` | Coolify API automation CLI |
 | `docker-compose.yml` / `Dockerfile` | Traefik reverse proxy + app image |
-| `provisioner/` | Stateless server creation, secure bootstrap, MYTHIC installation, handover, cleanup, and recovery |
+| `provisioner/` | Existing-host or cloud-host bootstrap, MYTHIC installation, handover, cleanup, and recovery |
 | `.kilocode/rules/memory-bank/FABLE_FINAL_RUN.md` | Provisioner-first final implementation scope and Opus handoff contract |
+| `.kilocode/rules/memory-bank/PROVISIONER_ENTRY_MODES.md` | Mandatory homelab/cloud mode split and shared installation architecture |
 
 ## Environment Notes
 
@@ -87,3 +97,4 @@ Fable must not create, expand, repair, or execute verification suites and must n
 | Now | Upgraded the homepage into a high-end MYTHIC launch experience with a raw WebGL2 particle/shader backdrop, stronger hero narrative, proof points, and refined ritual cards. |
 | 2026-07-12 | Re-audited the supplied deployment ecosystem and committed the final Fable production-closure specification. |
 | 2026-07-12 | Removed all new verification work from Fable's scope and expanded the Provisioner-first one-click implementation contract. |
+| 2026-07-12 | Added separate homelab/existing-host and Hetzner/new-cloud entry modes; Gmail is no longer considered part of the mandatory path. |
