@@ -1,319 +1,640 @@
-# FABLE FINAL RUN — MYTHIC Production Closure
+# FABLE FINAL RUN — MYTHIC One-Click Closure
 
 This document is the source of truth for the final Fable implementation run.
 
-Do not fork another platform. Do not restart the project. Do not redesign the landing page. Build the missing trust and comfort layer inside the existing MYTHIC repository while preserving every working capability.
+Do not fork another platform. Do not restart the project. Do not redesign the landing page. Preserve every working capability and spend the remaining implementation budget on the missing product layer.
 
-## 1. Product Decision
+## 0. Fable Budget Rule
 
-MYTHIC is **not** another general-purpose Coolify clone.
+Fable must spend **zero implementation budget on verification work** in this run.
 
-MYTHIC is a self-hosted deployment guardian for people who can create software with AI but do not want to become infrastructure operators.
+Do not:
 
-The product promise is:
+- create, expand, repair, or refactor automated verification suites
+- create fixtures, mocks, snapshots, sample matrices, or CI workflows
+- execute existing verification suites
+- perform manual acceptance scenarios
+- spend time making old verification code compatible with the new architecture
+- claim that the result is green, production-ready, or fully verified
 
-> Give MYTHIC a repository and the minimum credentials it actually needs. MYTHIC gets the app live, proves that it is healthy, keeps evidence, repairs bounded deployment mistakes, and always provides a safe way back.
+Existing verification files must remain untouched unless they physically block implementation. Do not delete useful existing coverage. Opus receives the completed implementation afterward and owns compilation, static analysis, verification, failure repair, and release hardening.
 
-The winning difference is not the number of supported services. It is the elimination of deployment uncertainty.
+Fable's finish report must clearly mark the implementation as **UNVERIFIED HANDOFF TO OPUS**.
 
-## 2. Existing Baseline — Preserve It
+## 1. Correct Product Definition
 
-The repository already contains working implementations for:
+MYTHIC is not primarily another deployment dashboard.
 
-- Git clone with branch fallback.
-- Nixpacks analysis and heuristic detection for Node, Python, Go, Rust, PHP, and static sites.
-- Docker image builds with generated Dockerfile fallback.
-- Docker deployment behind Traefik with automatic TLS.
-- Automatic Docker socket and Traefik network/entrypoint/certificate-resolver discovery.
-- SQLite persistence.
-- Deployment wizard, dashboard, detail page, redeploy, stop, and log polling.
-- OpenAI-compatible AI diagnosis and bounded deployment-configuration fixes.
-- Local BYOK provider management with encrypted API keys.
-- A stateless Go provisioner with Hetzner support, real health checks, cleanup, resume, dry-run, and handover.
-- Simulation mode for development environments without Docker.
-- A completed cinematic landing page.
+MYTHIC is a **self-hosted deployment appliance factory** for people who can create software with AI but do not want to become infrastructure operators.
 
-Do not replace these systems unless a migration is required for the release model below. Preserve backwards compatibility where practical.
+The complete promise is:
 
-## 3. Competitive Audit — What the Repository List Actually Proves
+> Give MYTHIC the minimum temporary abilities it needs. The Provisioner creates the machine, secures access, installs MYTHIC, proves that the service answers, removes its temporary access, and hands the user a working deployment system. MYTHIC then turns repositories into safely replaceable releases.
 
-The supplied repositories are not one category. They fall into four groups.
+The Provisioner is not an installation helper beside the product. **The Provisioner is the front door and the strongest differentiator.**
 
-### A. Direct deployment-platform signals
+Most competing systems begin after the user has already:
 
-| Repository | Useful signal for MYTHIC | Do not copy |
-|---|---|---|
-| `piyushgarg-dev/vercel-clone` | Separate API/build/router responsibilities; build artifacts and asynchronous work | AWS ECS/S3 architecture for a single self-hosted server |
-| `Krish120003/zercel` | GitHub auto-deploy, live logs, environment variables, generated subdomains, rollback/preview direction | GCP/Cloudflare/Neon/Upstash cloud dependency graph and Fluid Compute |
-| `dhairyathedev/githost` | Vercel-like repository-to-deploy experience | Product clone surface without MYTHIC's sovereign provisioning goal |
-| `swarnikaraj/vercel-clone` | Basic Vercel interaction patterns | Tutorial-level duplication |
-| `Praneeth003/Vercel-Clone` | Queue/build-worker pattern using Redis and object storage | AWS-centric distributed architecture |
-| `getmeli/meli` | Immutable releases, branch deploys, preview URLs, scoped API, password protection, PR/commit status | Static-site-only product boundary |
-| `coollabsio/coolify` | Mature reference for lifecycle and infrastructure vocabulary | Full PaaS breadth, teams, databases, 280+ services, operational complexity |
-| `ezeslucky/deployi` | Resource monitoring, database backup concepts, CLI/API parity | Database platform scope |
-| `younes101020/delivery` | Strong proof that a narrow, repository-first PaaS can be the correct product | Rebuilding its whole monorepo |
-| `kubeara/core` | Private infrastructure, AI workload awareness, one-click service language, MCP as a control surface | 200+ service catalog and GPU platform scope |
-| `SSujitX/docklift` | GitHub Apps/private repos, webhook auto-deploy, live logs, system metrics, simple installation | Browser terminal and broad Docker admin surface |
-| `turbocloud-dev/turbocloud-agent` | Single-agent deployment, no-Dockerfile path, broad server compatibility, security-first posture | New remote control-plane architecture |
-| `annihilatorrrr/GoCoolify` | Health checks, immutable image deploys, build/runtime secret separation, Compose and private registry patterns | Reimplementing all databases/services/backups |
+- selected a provider
+- created a server
+- chosen an image and size
+- configured SSH
+- opened ports
+- installed prerequisites
+- obtained the server IP
+- understood where to execute an installer
 
-### B. Valuable control and reliability layers
+MYTHIC must begin before all of that.
 
-| Repository | Pattern to absorb |
-|---|---|
-| `dazeb/coolify-mcp-enhanced` | Stable operator actions that AI clients can call: inspect, deploy, monitor, configure, cancel |
-| `ajmcclary/Coolify-Manager` | Deterministic health diagnostics and troubleshooting decision trees |
-| `AshokShau/coolify-telegram-bot` | Phone-first quick actions with explicit buttons instead of command memorization |
-| `ontech7/coolify-manager-app` | Mobile control is a real need; satisfy it as a responsive installable PWA before building a native app |
-| `light-merlin-dark/coolify-zero` | Health-gated blue/green or standby promotion; do not destroy the working release before the replacement is proven |
-| `kevinrivm/agentic-microservice-deployer` | Internal-only deployments, selected Docker networks, generated secrets, no forced public URL |
-| `dungnotnull/hd-coolify-enhanced` | Optional image vulnerability scan and evidence-based deployment advisory; AI must not be the sole authority |
-| `dropalltables/cdp` | Small CLI/operator surface rather than forcing every action through the dashboard |
+## 2. Competitive Truth
 
-### C. Deployment primitives, not competing products
+The supplied repository list shows four adjacent categories.
 
-The old Git/webhook/rsync/Pages/Flutter deployment repositories (`simple-php-git-deploy`, `github-pages-deploy-action`, `web-deploy`, `Github-Auto-Deploy`, `Git-Auto-Deploy`, `flutter-automatic-deploy`) confirm that push-triggered deployment, dry-run, explicit exclusions, and release automation are expected primitives. They are not a reason to fork.
+### 2.1 Existing-server installers
 
-`dnstt-deploy` is unrelated to MYTHIC's product. Its only useful lesson is verified installation, distribution-aware checks, and an honest management/recovery menu.
+Coolify, Docklift, TurboCloud Agent, and similar projects can install or control a platform after a server, IP address, and usually SSH access already exist.
 
-### D. Deployable applications and templates, not deployment platforms
+Useful patterns:
 
-The ChatGPT, v0, Google Drive, Notion, ecommerce, forms, landing-page, WordPress, ERPNext, n8n, OpenClaw, Hermes, and SPX Voice repositories are deployment targets or service templates. They prove that MYTHIC must handle real multi-service and environment-heavy repositories cleanly, but they are not MYTHIC replacements.
+- one-command installation
+- remote bootstrap over SSH
+- single-agent architecture
+- clear install/update/uninstall commands
 
-The generative-AI application collection and Coolify template collection suggest a future recipe/catalog layer. That is explicitly outside this final run.
+Their missing layer is cloud resource creation and a closed secure handover from provider credential to working platform.
 
-## 4. Final Feature Contract
+### 2.2 Infrastructure-as-code provisioners
 
-### P0 — Mandatory production closure
+Projects such as `Ujstor/coolify-hetzner-terraform` can create a Hetzner server and install a platform.
 
-All P0 items must be implemented and verified before any P1 work begins.
+Useful patterns:
 
-### 4.1 Brain-first first-run setup
+- provider API resource creation
+- firewall and server defaults
+- repeatable infrastructure description
+- destroy/recreate lifecycle
 
-The first-run path must ask for the optional LLM provider **before** infrastructure details, because it is the brain used to explain and repair the rest of setup.
+They are not the same product experience. They require Terraform installation, editable configuration, terminal commands, and infrastructure knowledge. They are operator automation, not frictionless end-user onboarding.
 
-Required states:
+### 2.3 Hosted control planes
 
-1. Choose no AI, local provider, or OpenAI-compatible provider.
-2. Enter and test the key/base URL/model.
-3. Store the key encrypted with the existing crypto system.
-4. Continue to server/domain/source setup.
-5. Clearly show which operations work without AI.
+Some products remotely install an agent onto a server and then manage it from a vendor console.
 
-Never block deployment merely because the user chose no AI.
+Useful patterns:
 
-### 4.2 Persistent Project + immutable Release model
+- remote bootstrap
+- single lightweight agent
+- broad provider compatibility
 
-Replace the current one-row-per-deployment mental model with:
+MYTHIC must not require a vendor control plane. Credentials, handover data, and operational state remain local or on the user's own MYTHIC server.
 
-- **Project**: persistent repository, branch, domain, environment, deployment policy, and active release.
-- **Release**: one immutable deployment attempt tied to a commit SHA and image tag.
-- **Release event**: ordered evidence for every state transition and log chunk.
+### 2.4 Repository-to-container platforms
 
-Existing `deployments` rows must be migrated or imported non-destructively. Do not wipe the current SQLite database.
+Vercel clones, Delivery, Meli, Docklift, Coolify, and related projects provide valuable release-management patterns after infrastructure exists:
 
-Minimum release states:
+- Git-connected deployment
+- immutable releases
+- build logs
+- previews
+- rollback
+- health-aware promotion
+- environment management
 
-`queued -> cloning -> analyzing -> building -> starting -> verifying -> ready -> promoted`
+These patterns belong behind MYTHIC's Provisioner. They do not replace it.
 
-Terminal or alternate states:
+## 3. Existing Baseline — Preserve It
 
-`failed`, `stopped`, `rolled_back`, `superseded`.
+The repository already contains:
 
-A failed release must never overwrite the active healthy release.
+- Git clone with branch fallback
+- Nixpacks analysis and heuristic detection for Node, Python, Go, Rust, PHP, and static sites
+- Docker image builds with generated Dockerfile fallback
+- Docker deployment behind Traefik with automatic TLS
+- automatic Docker socket and Traefik network/entrypoint/certificate-resolver discovery
+- SQLite persistence
+- deployment wizard, dashboard, detail page, redeploy, stop, and log polling
+- OpenAI-compatible deployment diagnosis and bounded configuration repair
+- local BYOK provider management with encrypted API keys
+- simulation mode for development environments without Docker
+- a completed cinematic landing page
+- a stateless Go Provisioner with Hetzner support, resume, status, cleanup, dry-run, handover, and temporary access removal
 
-### 4.3 Git source connection and automatic redeploy
+Do not replace these systems casually. Evolve them through additive seams and migrations.
+
+## 4. P0-A — Make the Provisioner the Real One-Click Product
+
+P0-A comes before every dashboard or release-management enhancement.
+
+### 4.1 Local browser launcher from the single Go binary
+
+The Provisioner must remain distributable as a single stateless binary.
+
+When launched without CLI arguments it must:
+
+1. bind an ephemeral loopback-only port
+2. open a local browser-based setup surface
+3. keep all credentials inside the local process
+4. expose no setup endpoint to the LAN or internet
+5. close the setup server after handover or explicit cancellation
+
+Keep the existing CLI as an expert and automation surface. The browser launcher is the default human path.
+
+Do not introduce Electron, Tauri, a hosted setup service, or an external frontend dependency. Serve the minimal interface from embedded Go assets.
+
+### 4.2 Brain and Hands first screen
+
+The first surface must explain the two temporary abilities:
+
+- **Brain** — optional OpenAI-compatible LLM key, base URL, and model
+- **Hands** — required cloud-provider token
+
+Requirements:
+
+- secret fields never echo full values after entry
+- values never enter URL parameters, browser storage, shell history, or process arguments
+- offer file/environment input in CLI mode
+- explain exactly when each credential is used
+- clearly state when the Brain is optional
+- allow the Hands token to be discarded locally immediately after provider work is complete
+- never transmit either credential to a MYTHIC-operated service because no such service exists
+
+### 4.3 Provider capability discovery
+
+Complete the Hetzner path before adding another provider.
+
+The launcher must query the provider API and present:
+
+- reachable locations
+- supported Ubuntu images
+- available server types
+- vCPU, RAM, disk, architecture, and current provider price metadata when available
+- a recommended default suitable for MYTHIC
+- an explicit estimated monthly cost before creation
+
+Do not hard-code a single server type as the only path. Cache nothing beyond the active local run unless resume state requires it.
+
+### 4.4 Correct credential and SSH sequence
+
+The safe sequence must be explicit and deterministic:
+
+1. generate the temporary SSH key pair locally
+2. register or inject only the public key through the provider API
+3. create the server with key-based access from first boot
+4. disable password-based bootstrap assumptions
+5. capture the host fingerprint on first trusted connection
+6. use a restricted bootstrap account for installation work
+7. remove provider-side temporary SSH-key resources when supported
+8. remove the bootstrap account and local private-key material after successful handover
+
+Never depend on a provider-generated root password being copied through the UI.
+
+### 4.5 Cloud firewall and host baseline
+
+The Hetzner adapter must create or attach the minimum cloud firewall required for the chosen mode:
+
+- SSH only from the operator's detected or explicitly entered source range when practical
+- HTTP and HTTPS publicly reachable for public mode
+- no accidental database or application-port exposure
+
+On the host:
+
+- install or verify Docker Engine and Compose
+- enable key-only SSH access
+- avoid leaving reusable bootstrap credentials
+- create the MYTHIC persistence directories and Docker network
+- record every host mutation in the local run journal
+
+Do not expand into a general server-hardening product. Implement only the baseline required for a safe MYTHIC appliance.
+
+### 4.6 MYTHIC release acquisition
+
+The Provisioner must install a pinned MYTHIC release, not an unbounded moving branch.
 
 Implement:
 
-- Capture the resolved commit SHA for every release.
-- GitHub webhook endpoint with HMAC SHA-256 signature verification.
-- Auto-deploy toggle per project.
-- Branch filter.
-- Duplicate-event protection by delivery ID and commit SHA.
-- Clear trigger metadata: manual, webhook, rollback, AI repair, or provisioner.
-- Public repositories as the guaranteed path.
-- Private repository credentials only through encrypted settings and an ephemeral authentication mechanism; never persist a token inside a clone URL or logs.
+- release channel selection: stable by default, explicit development override
+- resolved version shown before installation
+- checksum verification before execution or extraction
+- optional signature verification when release signatures are present
+- refusal on checksum mismatch
+- version metadata written into the handover record
+- no `curl | bash` execution path for MYTHIC itself
 
-Do not claim full GitHub App support unless the complete installation and selected-repository flow is actually implemented and tested. A clean encrypted token path is preferable to a fake GitHub App button.
+Development mode may install a specific repository ref, but it must be visibly marked as unverified development input.
 
-### 4.4 Durable build and runtime evidence
+### 4.7 Domain and DNS closure
 
-The current append-only `logs` text column is not sufficient as the primary architecture.
+A real one-click path cannot silently stop at “now configure DNS yourself.”
 
-Implement:
+Implement two honest modes.
 
-- Ordered release events/log chunks in SQLite.
-- Server-Sent Events or an equally simple durable streaming endpoint.
-- Reconnect from a sequence number without losing output.
-- Separate build logs from runtime container logs.
-- Persist status reason and failure summary.
-- Redact secrets before persistence, display, or LLM transmission.
-- Keep the old polling endpoint working as a compatibility layer if practical.
+#### Automated DNS mode
 
-The UI must never show success merely because a build command exited. Success requires health evidence.
+Support narrowly scoped DNS credentials through an adapter boundary.
 
-### 4.5 Health-gated safe promotion and rollback
+Priority:
 
-Change deployment semantics so MYTHIC no longer removes the active container before the candidate is proven.
+1. Hetzner DNS when the user's zone is there
+2. Cloudflare DNS as the next adapter only if remaining implementation budget permits
 
 Required behavior:
 
-1. Build a uniquely tagged image for the release.
-2. Start a uniquely named candidate container on the correct Docker network.
-3. Verify Docker running state.
-4. Perform an HTTP health probe using a configured or inferred path and port; fall back to TCP/process responsiveness when an HTTP root is not meaningful.
-5. Only promote after health succeeds.
-6. Leave the previous known-good release available until promotion succeeds.
-7. Provide one-click rollback to the previous healthy image without rebuilding.
-8. Record the exact evidence and timing.
+- discover only accessible zones
+- create or update the exact A records MYTHIC requires
+- never request or store a full cloud-account credential when a DNS-scoped token is sufficient
+- display the exact records before mutation
+- journal old and new values for recovery
+- wait for observable DNS convergence before requesting final TLS health
 
-Use a blue/green or standby approach compatible with the existing Traefik/Docker architecture. Avoid claiming mathematically guaranteed zero downtime on unknown external Traefik setups. The hard requirement is **no build-time outage and no destruction of the healthy release before verification**.
+#### Guided DNS mode
 
-Keep at least the last three successful release images by default, with explicit garbage collection for older unused images.
+When no supported DNS credential is supplied:
 
-### 4.6 Project environment and secret safety
+- create the server and install MYTHIC completely
+- show the exact record names, types, values, and reason
+- provide copy buttons
+- persist resumable local state
+- pause in a clear `ACTION_REQUIRED_DNS` state
+- continue from the same run after the user confirms the records
+- re-check DNS and complete TLS handover
 
-Implement project-level environment management with:
+Do not call guided DNS “one click.” Call the automated adapter path one click and the fallback guided provisioning.
 
-- Plain non-secret variables.
-- Encrypted secret values.
-- Separate `build` and `runtime` scopes.
-- Secret values write-only after save.
-- Redaction in commands, logs, errors, AI prompts, API responses, and audit events.
-- Detection of expected variable names from `.env.example`, framework conventions, and analysis output.
-- A readiness view that reports missing names without reading or exposing a committed `.env` file.
+### 4.8 Installation state machine and journal
 
-The AI repair layer may suggest variable **names**, but must never invent or expose secret values.
+Replace any loose sequence with an explicit resumable state machine.
 
-### 4.7 Public and internal-only service modes
+Minimum states:
 
-Every project must choose one exposure mode:
+`INPUT -> PROVIDER_VERIFIED -> KEY_CREATED -> SERVER_REQUESTED -> SERVER_ACTIVE -> SSH_VERIFIED -> HOST_PREPARED -> MYTHIC_INSTALLED -> LOCAL_HEALTHY -> DNS_READY -> HTTPS_HEALTHY -> HANDOVER_READY -> TEMP_ACCESS_REMOVED -> COMPLETE`
 
-- **Public**: Traefik router, domain, TLS.
-- **Internal**: no public router or certificate; attach to an approved Docker network and expose a stable internal service address.
+Alternate states:
 
-Internal mode must support an optional selected network for cases such as n8n-to-agent communication. Validate the network exists. Do not silently attach arbitrary host networks.
+- `ACTION_REQUIRED_DNS`
+- `RECOVERABLE_FAILURE`
+- `CLEANUP_REQUIRED`
+- `CANCELLED`
+- `DESTROYED`
 
-### 4.8 Bounded AI repair guardian
+The local journal must contain:
 
-Preserve the current AI fix, but make the contract explicit and safe.
+- provider resource IDs
+- non-secret configuration
+- completed state transitions
+- host fingerprint
+- resolved MYTHIC version and checksum
+- DNS mutations
+- last safe recovery action
 
-Allowed repair outputs:
+Sensitive resume material must be encrypted locally with a run-specific key or user passphrase. Never store provider tokens or private keys as plaintext state.
+
+### 4.9 Honest recovery surface
+
+The browser launcher and CLI must expose the same recovery actions:
+
+- resume interrupted run
+- inspect current state
+- retry the current deterministic step
+- remove temporary access
+- export encrypted handover
+- destroy the newly created server
+- keep the server for manual recovery
+- forget local run state only after warning about orphaned resources
+
+Every failure must return exactly:
+
+- what succeeded
+- what failed
+- what remains active and potentially billable
+- whether temporary access still exists
+- one safest next action
+
+Do not emit a generic stack trace as the primary user message.
+
+### 4.10 Health-gated handover
+
+“Server created” is not success.
+
+The Provisioner may enter `COMPLETE` only after:
+
+- provider reports the server active
+- SSH host identity is captured
+- Docker answers
+- MYTHIC containers are running
+- MYTHIC's local health endpoint answers from the host
+- the public URL answers over HTTPS in public mode
+- the one-time admin credential has been generated
+- temporary bootstrap access has been removed
+- cleanup state has been recorded
+
+These are product gates, not a verification-suite assignment.
+
+### 4.11 First-login handover ritual
+
+The final screen must present a human handover, not a JSON dump alone.
+
+Show:
+
+- MYTHIC URL
+- server IP and provider resource ID
+- resolved MYTHIC version
+- one-time admin credential with one reveal and copy action
+- SSH host fingerprint
+- monthly server estimate captured at creation
+- health status
+- temporary-access removal status
+- encrypted handover export
+- prominent warning that the provider continues billing until the server is destroyed
+
+The one-time admin credential must force permanent credential creation on first login.
+
+Keep JSON export for automation, but make the browser handover the default.
+
+### 4.12 Provisioner-to-MYTHIC bootstrap contract
+
+Define a versioned bootstrap payload shared by the Go Provisioner and MYTHIC.
+
+Minimum fields:
+
+- schema version
+- installation ID
+- provider name and resource ID
+- public IP
+- hostname and base domain
+- exposure mode
+- resolved MYTHIC version
+- encrypted Brain provider configuration when supplied
+- one-time admin token hash or secure injection reference
+- provisioned timestamp
+- host fingerprint
+
+MYTHIC must consume the payload once, initialize its first-run state, and mark it consumed. The plaintext one-time credential must not remain in the payload afterward.
+
+### 4.13 Appliance lifecycle after installation
+
+Add the smallest complete lifecycle needed by a non-operator:
+
+- show installed version
+- check whether a newer pinned release exists only on explicit user action
+- upgrade while preserving volumes and configuration
+- restart MYTHIC services
+- run deterministic appliance diagnostics
+- rotate the admin recovery credential
+- generate an encrypted local recovery bundle
+- uninstall MYTHIC without automatically destroying unrelated server data
+- optionally destroy the provider server through a separate explicit provider-authorized action
+
+Do not build a general host-control panel.
+
+### 4.14 Provisioner architecture boundary
+
+The current Docker-socket design is acceptable for this final implementation run, but make the boundary explicit:
+
+- all host-control operations live behind one internal interface
+- UI and route code never access Docker directly
+- document the future replacement seam for a restricted host agent
+- do not spend this run implementing that future agent
+
+## 5. P0-B — Complete the Deployment Trust Layer
+
+Begin P0-B only after the Provisioner path is structurally complete.
+
+### 5.1 Persistent Project and immutable Release model
+
+Evolve the current one-row-per-deployment model into:
+
+- **Project** — persistent repository, branch, domain, environment, deployment policy, and active release
+- **Release** — one immutable deployment attempt tied to a commit SHA and uniquely tagged image
+- **Release event** — ordered evidence for every phase transition and log chunk
+
+Import existing deployment records non-destructively.
+
+Minimum release flow:
+
+`queued -> cloning -> analyzing -> building -> starting -> verifying -> ready -> promoted`
+
+Alternate states:
+
+`failed`, `stopped`, `rolled_back`, `superseded`.
+
+A failed candidate must never overwrite or remove the active healthy release.
+
+### 5.2 Git source and automatic redeploy
+
+Implement:
+
+- resolved commit SHA on every release
+- GitHub webhook with HMAC SHA-256 signature verification
+- auto-deploy toggle per project
+- branch filter
+- duplicate-event protection by delivery ID and commit SHA
+- trigger metadata: manual, webhook, rollback, AI repair, or Provisioner
+- public repository path as the guaranteed baseline
+- encrypted ephemeral authentication for private repositories
+
+Do not fake a GitHub App flow. A clean encrypted token path is preferable to an incomplete button.
+
+### 5.3 Durable logs and release evidence
+
+Replace the single append-only log text field as the primary architecture with ordered release events.
+
+Implement:
+
+- durable build log chunks
+- durable runtime log chunks
+- simple reconnectable streaming from a sequence number
+- status reason and failure summary
+- secret redaction before persistence, display, API output, or LLM transmission
+- compatibility access for the old polling UI where practical
+
+### 5.4 Safe candidate promotion and rollback
+
+Change deployment semantics:
+
+1. build a uniquely tagged image
+2. start a uniquely named candidate container
+3. verify Docker running state
+4. probe configured or inferred health
+5. promote routing only after the candidate answers
+6. keep the prior release available if promotion fails
+7. provide rollback to a retained known-good image without rebuilding
+8. retain the last three successful release images by default
+9. provide explicit cleanup of older unused images
+
+Do not promise universal zero downtime. Promise that MYTHIC does not destroy the working release before the replacement proves it can answer.
+
+### 5.5 Project variables and secret safety
+
+Implement:
+
+- plain variables
+- encrypted secrets
+- build and runtime scopes
+- write-only secret display after save
+- redaction everywhere
+- expected-name discovery from `.env.example`, framework conventions, and analysis output
+- readiness display that names missing variables without exposing values
+
+The AI may suggest variable names. It must never invent secret values.
+
+### 5.6 Public and internal-only projects
+
+Each project chooses:
+
+- **Public** — Traefik router, domain, TLS
+- **Internal** — no public router or certificate; approved Docker network and stable internal service address
+
+Validate selected networks. Never silently attach arbitrary host networks.
+
+### 5.7 Bounded AI deployment guardian
+
+Preserve the current AI repair layer and restrict it to:
 
 - build command
 - start command
 - port
 - required environment variable names
-- generated Dockerfile/build metadata
-- health-check path or strategy
+- generated Dockerfile or build metadata
+- health path or strategy
 
 Rules:
 
-- Redact all known secrets before sending evidence to an external model.
-- Maximum two automated repair attempts per release.
-- Every repair is stored as structured evidence: diagnosis, proposed changes, accepted changes, result.
-- No unbounded loop.
-- No source-code commit or arbitrary shell command execution without a separate explicit future capability.
-- If the model returns an unsupported action, reject it and explain why.
+- redact all known secrets
+- maximum two automated repair attempts per release
+- store diagnosis, accepted configuration changes, and result as release evidence
+- reject unsupported actions
+- no source-code commits
+- no arbitrary shell commands
+- no unbounded loop
 
-### 4.9 Mobile-first operator surface
+### 5.8 Mobile-first PWA operator surface
 
-Do not build a native app in this run. Make the web application an installable, responsive PWA.
+Do not build a native app in this run.
 
-The phone view must prioritize:
+The installable responsive web surface must prioritize:
 
+- appliance health
 - project state
 - active URL or internal address
 - current release and commit
-- health
-- last failure reason
-- deploy/redeploy
+- last failure
+- deploy or redeploy
 - restart
 - rollback
 - stop
 - live logs
 
-Use large touch targets and confirmation for destructive actions. Do not add a browser terminal.
+Use large touch targets and confirmations for destructive actions. Do not add a browser terminal.
 
-### 4.10 Deterministic diagnostics
+### 5.9 Deterministic diagnostics
 
-Add a single project diagnostics action that checks, in order:
+Add one appliance diagnostics action and one project diagnostics action.
 
-1. Docker connectivity.
-2. Proxy/network discovery.
-3. repository accessibility.
-4. required environment names.
-5. domain DNS readiness for public projects.
-6. build prerequisites.
-7. candidate container state.
-8. health endpoint.
-9. runtime logs.
+Appliance diagnostics:
 
-Return a structured result with `pass`, `warn`, or `fail`, plus one recovery action. AI may explain the result but must not replace the deterministic checks.
+1. provider metadata availability
+2. disk and memory pressure
+3. Docker connectivity
+4. proxy and network discovery
+5. MYTHIC service state
+6. domain and certificate state
 
-## 5. P1 — Only after every P0 gate is green
+Project diagnostics:
 
-### 5.1 Branch and pull-request previews
+1. repository accessibility
+2. required variable names
+3. DNS readiness for public projects
+4. build prerequisites
+5. candidate container state
+6. health endpoint
+7. runtime logs
 
-- Generated preview subdomain per branch or commit.
-- Preview release must never replace production.
-- Optional password protection.
-- Expiry/cleanup policy.
-- GitHub commit status or check URL only if authentication is available and verified.
+Return `pass`, `warn`, or `fail` plus one recovery action. AI may explain deterministic results but may not replace them.
 
-### 5.2 Stable operator API
+## 6. P1 — Only with Remaining Implementation Budget
 
-Expose a documented local API for:
+### 6.1 Branch and pull-request previews
 
-- list projects/releases
+- generated preview subdomain per branch or commit
+- previews never replace production
+- optional password protection
+- expiry and cleanup policy
+- GitHub status URL only when authentication is genuinely available
+
+### 6.2 Stable local operator API
+
+Expose narrowly scoped local actions for:
+
+- inspect appliance
+- list projects and releases
 - inspect health and diagnostics
 - stream logs
-- deploy/redeploy
+- deploy or redeploy
 - restart
 - rollback
 - stop
 
-Use narrowly scoped local tokens. This API is the future foundation for MCP, Android, Telegram, CUE, or other agent clients. Do not implement a full MCP server in this run unless all P0 and preview work is complete.
+This is the future foundation for MCP, CUE, Android, Telegram, and other clients. Do not implement a full MCP server during this run.
 
-### 5.3 Optional security advisory
+### 6.3 Additional provider adapter
 
-When Trivy is installed or enabled:
+Only after the Hetzner path and adapter boundary are complete, add one further provider if the implementation budget clearly permits it.
+
+Do not add multiple half-working providers. A complete Hetzner path is more valuable than a provider logo collection.
+
+### 6.4 Optional image advisory
+
+When Trivy is already available or explicitly enabled:
 
 - scan the built image
 - store the report as release evidence
-- warn on high/critical findings
-- never claim that an LLM explanation is a vulnerability fix
-- do not make Trivy a mandatory dependency for the normal zero-config path
+- warn on high or critical findings
+- never present an LLM explanation as a completed vulnerability repair
+- keep scanning optional for the zero-config path
 
-## 6. Explicit Non-Goals
+## 7. Explicit Non-Goals
 
-Do not build any of the following in this run:
+Do not build:
 
 - multi-tenant SaaS billing
-- organizations and team permissions
-- database provisioning or database backups
-- 200+ one-click service marketplace
+- organizations or team permissions
+- database provisioning or backups
+- a large one-click service marketplace
 - Kubernetes
 - serverless or Fluid Compute
 - global CDN
-- multi-cloud control plane
-- native mobile app
+- multi-cloud fleet management
+- native mobile application
 - Telegram bot
 - browser terminal
-- generic WordPress/n8n/ERPNext special cases
-- AI-generated arbitrary Docker Compose from prose
-- WAF/ML resource prediction platform
-- source-code editing and committing by the deployment AI
+- generic WordPress, n8n, ERPNext, or voice-agent special cases
+- AI-generated arbitrary Compose from prose
+- WAF or ML resource-prediction platform
+- source-code editing and committing by deployment AI
 - another landing-page redesign
+- a hosted MYTHIC control plane
+- a generic server administration panel
 
-If a non-goal is needed to complete a P0 requirement, implement the smallest internal seam, not the full product category.
+When a seam is required for a mandatory item, implement the smallest internal abstraction rather than the full adjacent product category.
 
-## 7. Suggested Data Model
+## 8. Suggested Additive Data Model
 
-Use additive SQLite migrations with a migration version table.
+Use additive SQLite migrations with a migration-version table.
 
-Suggested tables/fields:
+### `installations`
+
+- `id`
+- `schema_version`
+- `provider`
+- `provider_resource_id`
+- `public_ip`
+- `hostname`
+- `base_domain`
+- `exposure_mode`
+- `mythic_version`
+- `host_fingerprint`
+- `provisioned_at`
+- `bootstrap_consumed_at`
 
 ### `projects`
 
@@ -382,93 +703,67 @@ Suggested tables/fields:
 - `received_at`
 - `result`
 
-Do not duplicate provider key encryption. Reuse and generalize the existing crypto/settings implementation.
+Do not duplicate encryption implementations. Generalize the existing crypto/settings boundary.
 
-## 8. Compatibility Requirements
+## 9. Compatibility Requirements
 
-- Preserve current root quick start.
-- Preserve simulation mode.
-- Preserve the existing provisioner tests and behavior.
-- Preserve existing `/api/deployments` routes through adapters or compatibility wrappers until the new UI is fully migrated.
-- Existing records remain visible after migration.
-- Existing BYOK settings remain readable.
-- Existing deployments must not be stopped during a database migration.
+- preserve the current root quick start
+- preserve simulation mode
+- preserve existing Provisioner behavior while moving it behind the new state machine and browser launcher
+- preserve existing verification files untouched for the Opus handoff
+- preserve `/api/deployments` through adapters or compatibility wrappers until the new UI is migrated
+- retain existing records after migration
+- retain existing BYOK settings
+- do not stop existing deployments during migration
+- keep the Provisioner CLI compatible where practical
 
-## 9. Implementation Order
+## 10. Implementation Order
 
-Follow this order. Do not jump to visual polish.
+Do not jump to visual polish.
 
-1. Add migrations and Project/Release/Event models.
-2. Import legacy deployment records.
-3. Refactor pipeline around immutable releases and unique images/containers.
-4. Add candidate health verification and safe promotion.
-5. Add rollback and image retention/garbage collection.
-6. Add durable event log storage and streaming.
-7. Add project variables/secrets with redaction and readiness analysis.
-8. Add GitHub webhook verification, duplicate protection, and auto-deploy.
-9. Add internal-only exposure mode.
-10. Update dashboard/detail UI and PWA shell.
-11. Add deterministic diagnostics.
-12. Harden bounded AI repair around the new evidence model.
-13. Add tests and compatibility checks.
-14. Update README and memory bank with verified reality only.
-15. Implement P1 only if all P0 checks remain green.
+1. Freeze the existing working baseline and identify the Provisioner/MYTHIC bootstrap seam.
+2. Define the versioned bootstrap payload.
+3. Refactor the Provisioner into an explicit resumable state machine and encrypted journal.
+4. Correct the SSH-key-before-server-creation sequence and provider resource cleanup.
+5. Add Hetzner capability discovery, recommendation, and cost preview.
+6. Add cloud firewall creation and minimum host baseline.
+7. Add pinned MYTHIC release acquisition with checksum enforcement.
+8. Add the embedded loopback-only browser launcher.
+9. Add automated Hetzner DNS and guided resumable DNS fallback.
+10. Add browser handover, one-time admin consumption, and first-login completion.
+11. Add appliance lifecycle actions: inspect, resume, upgrade, restart, recovery export, uninstall, explicit destroy.
+12. Add installation persistence inside MYTHIC.
+13. Add Project, Release, and Release Event storage.
+14. Import legacy deployment records.
+15. Refactor deployment around unique candidate releases.
+16. Add health-gated promotion, rollback, and image retention.
+17. Add durable log storage and reconnectable streaming.
+18. Add project variables, encrypted secrets, and redaction.
+19. Add GitHub webhook auto-deploy.
+20. Add internal-only project mode.
+21. Add appliance and project diagnostics.
+22. Update dashboard and PWA control surface.
+23. Restrict AI repair around structured release evidence.
+24. Implement P1 only if meaningful implementation budget remains.
+25. Update README and memory bank with implemented reality and an explicit unverified handoff.
 
-## 10. Required Tests
+## 11. Finish Contract
 
-Add a `bun test` path and deterministic tests for at least:
-
-- additive migration from the current schema
-- legacy record import
-- valid and invalid GitHub HMAC signatures
-- webhook duplicate rejection
-- release state transitions
-- active release remains untouched after candidate failure
-- successful candidate promotion
-- rollback uses a previous image without rebuilding
-- event ordering and stream resume sequence
-- secret encryption round trip
-- secret redaction in logs and AI evidence
-- internal project creates no public Traefik router
-- repair attempt limit
-- simulation mode behavior
-
-Continue to run:
-
-```bash
-bun typecheck
-bun lint
-bun test
-bun run build
-cd provisioner && go test ./...
-```
-
-## 11. Manual Acceptance Scenarios
-
-The run is not complete until these scenarios are demonstrated or accurately marked blocked by the environment:
-
-1. Deploy a healthy public sample project.
-2. Push a new commit and trigger one webhook deployment.
-3. Watch logs live, disconnect, reconnect, and continue from the correct event sequence.
-4. Deploy a broken commit and prove the current healthy release remains live.
-5. Roll back to the prior release without rebuilding.
-6. Save a secret and prove it never appears in API output, logs, or AI evidence.
-7. Deploy an internal-only sample and prove no public router exists.
-8. Use the dashboard from a narrow mobile viewport and complete redeploy and rollback.
-9. Run diagnostics against a failed project and receive one grounded recovery path.
-10. Verify the provisioner still passes all tests.
-
-## 12. Finish Contract
-
-At the end of the run, report:
+At the end of the Fable run, report only:
 
 - exact files changed
-- database migration behavior
-- implemented P0 features
-- any P1 features completed
-- commands run and their real results
-- manual scenarios verified
-- limitations that remain
-- no statement of success without evidence
+- architecture and schema changes
+- Provisioner states and recovery actions implemented
+- provider, DNS, firewall, release-acquisition, and handover capabilities implemented
+- deployment trust-layer features implemented
+- migration behavior intended
+- compatibility seams retained
+- known incomplete branches and risks
+- work intentionally deferred to Opus
+- the exact label: **UNVERIFIED HANDOFF TO OPUS**
 
-The final result should feel smaller than Coolify, safer than a tutorial Vercel clone, and dramatically easier for a non-infrastructure creator to trust.
+Do not spend remaining budget producing verification evidence. Do not claim completion merely because code was written.
+
+The finished direction must feel fundamentally different from a Vercel clone:
+
+> MYTHIC does not merely deploy an app onto infrastructure. MYTHIC creates the trustworthy place from which deployments become possible.
