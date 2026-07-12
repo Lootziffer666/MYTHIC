@@ -92,23 +92,10 @@ func (p *Provisioner) Run() (Handover, *FailResult) {
 	}
 	log.ok("provider authenticated")
 
-	// 3+4. create server (idempotent)
-	rid, ip, err := prov.FindServer(p.cfg.ServerName)
-	if rid == "" {
-		rid, ip, err = prov.CreateServer(p.cfg.ServerName, p.cfg.ServerType, p.cfg.Region, p.cfg.Image, p.cfg.SSHPublicKey)
-		if err != nil {
-			return Handover{}, fail("Create server", err.Error(), "check quota/region/image")
-		}
-		log.ok("server created: " + ip)
-	} else {
-		log.ok("reusing existing server: " + ip)
-	}
-	p.state.ProviderResourceID = rid
-	p.state.ServerIP = ip
-	p.cfg.ServerName = p.cfg.ServerName
-	p.saveState("create-server", "")
-
-	// 5. temporary SSH key pair
+	// 3. generate the temporary SSH key before server creation so the cloud
+	// provider can inject key-based access from first boot. This avoids the unsafe
+	// old pattern of creating a password-bootstrapped server and then trying to
+	// publish a key over root SSH.
 	if p.keyFp == "" {
 		kp, kerr := generateSSHKey()
 		if kerr != nil {
@@ -121,30 +108,75 @@ func (p *Provisioner) Run() (Handover, *FailResult) {
 		}
 		p.keyFp = fp
 		p.state.SSHPublicKey = kp.publicKey
-		defer p.removeTempKey() // 20. remove temporary key
+		defer p.removeTempKey() // 20. remove local temporary key material
 	}
-	log.ok("temporary SSH key generated (in-memory + 0600 temp file)")
+	log.ok("temporary SSH key generated before provider server creation")
 
-	// 6. publish public key (root authorized_keys)
-	if p.cfg.SSHPublicKey == "" {
-		if _, err = runSSHSeam(ip, "root", p.keyFp,
-			fmt.Sprintf("mkdir -p /root/.ssh && echo '%s' >> /root/.ssh/authorized_keys && chmod 600 /root/.ssh/authorized_keys", p.key.publicKey)); err != nil {
-			return Handover{}, fail("Publish public key", err.Error(), "check network/SSH")
+	if p.cfg.SSHPublicKey != "" {
+		log.info("--ssh-pub is recorded for compatibility; cloud bootstrap uses the run-scoped temporary key so cleanup is deterministic")
+	}
+	sshKeyID, err := prov.RegisterSSHKey(fmt.Sprintf("mythic-%s-%d", p.cfg.ServerName, time.Now().Unix()), p.state.SSHPublicKey)
+	if err != nil {
+		return Handover{}, fail("Register SSH key", err.Error(), "check provider token/SSH-key permissions")
+	}
+	p.state.ProviderSSHKeyID = sshKeyID
+	p.saveState("register-ssh-key", "")
+	log.ok("temporary SSH public key registered with provider")
+
+	// 4. create server (idempotent) with provider-side key-based access.
+	rid, ip, err := prov.FindServer(p.cfg.ServerName)
+	if rid == "" {
+		rid, ip, err = prov.CreateServer(p.cfg.ServerName, p.cfg.ServerType, p.cfg.Region, p.cfg.Image, sshKeyID)
+		if err != nil {
+			_ = prov.DeleteSSHKey(sshKeyID)
+			return Handover{}, fail("Create server", err.Error(), "check quota/region/image")
 		}
-		log.ok("public key deployed to root")
+		log.ok("server created with key-based access: " + ip)
 	} else {
-		log.info("using pre-provided public key")
+		log.ok("reusing existing server: " + ip)
+	}
+	p.state.ProviderResourceID = rid
+	p.state.ServerIP = ip
+	p.saveState("create-server", "")
+
+	// 7. wait for provider active state, then SSH reachability. Keep the provider-side
+	// SSH key resource until the server is known to exist and answer; delete it as
+	// soon as bootstrap access is proven, while the local private key remains for
+	// this run until final cleanup.
+	if !p.cfg.DryRun {
+		for i := 0; i < 30; i++ {
+			active, aerr := prov.ServerActive(rid)
+			if aerr != nil {
+				return Handover{}, fail("Wait for server active", aerr.Error(), "check provider server status")
+			}
+			if active {
+				break
+			}
+			if i == 29 {
+				return Handover{}, fail("Wait for server active", "server did not become running", "check provider console")
+			}
+			sleep(3)
+		}
 	}
 
-	// 7. wait for reachability
+	// 8. wait for reachability
 	if !p.cfg.DryRun {
 		if err = waitSSHSeam(ip, p.keyFp); err != nil {
 			return Handover{}, fail("Wait for reachability", err.Error(), "check firewall/network")
 		}
 	}
 	log.ok("server reachable via SSH")
+	if sshKeyID != "" {
+		if err = prov.DeleteSSHKey(sshKeyID); err != nil {
+			log.warn("provider SSH key cleanup deferred: " + err.Error())
+		} else {
+			p.state.ProviderSSHKeyID = ""
+			p.saveState("provider-ssh-key-removed", "")
+			log.ok("temporary provider SSH key removed")
+		}
+	}
 
-	// 8. verify host key + capture fingerprint
+	// 9. verify host key + capture fingerprint
 	fingerprint, err := hostFingerprintSeam(ip)
 	if err != nil {
 		return Handover{}, fail("Verify host key", err.Error(), "retry")

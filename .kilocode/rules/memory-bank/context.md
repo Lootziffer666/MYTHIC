@@ -34,6 +34,10 @@ Fable must not create, expand, repair, or execute verification suites and must n
 
 ## Recently Completed
 
+- [x] Extended the local Provisioner launcher with a read-only Hetzner capability discovery action that keeps provider credentials in the loopback session and does not execute mutations from the browser.
+- [x] Added the first local loopback-only browser launcher slice for the Provisioner default human path, with mode selection and Brain/Hands explanation that does not request cloud credentials before entry-mode choice.
+- [x] Fixed the Hetzner/cloud Provisioner bootstrap sequence so the run-scoped SSH key is generated and registered with the provider before server creation, waits for active/reachable bootstrap access, and cleans up provider-side temporary SSH-key resources.
+- [x] Added provider capability discovery plumbing for the Provisioner, including Hetzner locations, Ubuntu images, server-type hardware metadata, monthly price hints, and an explicit CLI capabilities view.
 - [x] Repository onboarding README: documented MYTHIC positioning, quick start, configuration, architecture, development commands, and production-hardening priorities; added `public/.gitkeep` so Dockerfile public asset copy has a stable source.
 - [x] Fixed current ESLint blockers in Settings and Wizard client components so lint/typecheck/build can pass again.
 - [x] Repaired provisioner compile/test blockers: compose label quoting, missing imports/state fields, host-key handshake auth, temp work-dir creation, and test seams for SSH/health/injection.
@@ -98,3 +102,7 @@ Fable must not create, expand, repair, or execute verification suites and must n
 | 2026-07-12 | Re-audited the supplied deployment ecosystem and committed the final Fable production-closure specification. |
 | 2026-07-12 | Removed all new verification work from Fable's scope and expanded the Provisioner-first one-click implementation contract. |
 | 2026-07-12 | Added separate homelab/existing-host and Hetzner/new-cloud entry modes; Gmail is no longer considered part of the mandatory path. |
+| 2026-07-12 | Corrected cloud provisioning to use provider-injected, run-scoped SSH access from first boot, wait for provider active state before SSH, and clean up provider-side temporary SSH-key resources. |
+| 2026-07-12 | Added Hetzner capability discovery output for locations, Ubuntu images, server types, recommendation defaults, and price hints before cloud creation. |
+| 2026-07-12 | Added the initial embedded loopback-only Provisioner browser launcher, keeping the CLI as the executable automation path while making no-args launch open a local setup surface. |
+| 2026-07-12 | Extended the launcher with read-only provider capability discovery so cloud choices can be inspected locally before any mutation. |

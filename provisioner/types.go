@@ -61,6 +61,7 @@ type StageState struct {
 	ServerIP                string `json:"server_ip"`
 	ServerName              string `json:"server_name"`
 	SSHPublicKey            string `json:"ssh_public_key"`
+	ProviderSSHKeyID        string `json:"provider_ssh_key_id"`
 	BootstrapUser           string `json:"bootstrap_user"`
 	AdminToken              string `json:"admin_token"` // one-time, only needed for injection; cleared after use
 	SSHHostFingerprintSaved string `json:"ssh_host_fingerprint"`

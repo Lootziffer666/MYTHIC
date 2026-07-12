@@ -21,35 +21,43 @@ import (
 // the process list / shell history.
 
 func main() {
+	if len(os.Args) == 1 {
+		if err := runLauncher(); err != nil {
+			fatal(err.Error())
+		}
+		return
+	}
+
 	var (
-		brain       = flag.String("brain", envOr("", "MYTHIC_BRAIN"), "LLM API key (brain) — never logged")
-		brainFile   = flag.String("brain-file", "", "file containing the LLM key")
-		brainBase   = flag.String("brain-base", "", "LLM base URL (optional)")
-		brainModel  = flag.String("brain-model", "gpt-4o-mini", "LLM default model")
-		hands       = flag.String("hands", envOr("", "MYTHIC_HANDS"), "provider API token (hands) — never logged")
-		handsFile   = flag.String("hands-file", "", "file containing the provider token")
-		provider    = flag.String("provider", "hetzner", "provider kind: hetzner | mock")
-		apiURL      = flag.String("provider-api", "", "provider API URL override")
-		serverName  = flag.String("server-name", "mythic-1", "server/resource name")
-		stype       = flag.String("type", "cpx11", "server type")
-		region      = flag.String("region", "fsn1", "region/location")
-		image       = flag.String("image", "ubuntu-24.04", "image")
-		domain      = flag.String("domain", "", "FQDN for MYTHIC (sets mythic_url)")
-		sshPub      = flag.String("ssh-pub", "", "pre-existing public key to inject (optional)")
-		dryRun      = flag.Bool("dry-run", false, "validate + plan, perform no remote changes")
-		resume      = flag.Bool("resume", false, "resume from local state file")
-		status      = flag.Bool("status", false, "print last local state and exit")
-		cleanup     = flag.Bool("cleanup", false, "destroy the provisioned server and exit")
-		keepFail    = flag.Bool("keep-server-on-failure", false, "do not destroy server on failure")
-		destroyFail = flag.Bool("destroy-server-on-failure", false, "destroy server on failure")
-		exportHand  = flag.Bool("export-handover", false, "write plaintext handover JSON (default off)")
-		handPass    = flag.String("handover-pass", "", "passphrase to encrypt handover export")
-		stateFile   = flag.String("state-file", "mythic-provision-state.json", "local state file")
-		mode        = flag.String("mode", "cloud", "entry mode: cloud (new machine) | homelab (existing machine)")
-		hlHost      = flag.String("host", "", "homelab: existing machine hostname or IP")
-		hlPort      = flag.String("ssh-port", "22", "homelab: SSH port")
-		hlUser      = flag.String("ssh-user", "root", "homelab: SSH user")
-		hlKey       = flag.String("ssh-key", "", "homelab: private key file (default: discover ~/.ssh key)")
+		brain        = flag.String("brain", envOr("", "MYTHIC_BRAIN"), "LLM API key (brain) — never logged")
+		brainFile    = flag.String("brain-file", "", "file containing the LLM key")
+		brainBase    = flag.String("brain-base", "", "LLM base URL (optional)")
+		brainModel   = flag.String("brain-model", "gpt-4o-mini", "LLM default model")
+		hands        = flag.String("hands", envOr("", "MYTHIC_HANDS"), "provider API token (hands) — never logged")
+		handsFile    = flag.String("hands-file", "", "file containing the provider token")
+		provider     = flag.String("provider", "hetzner", "provider kind: hetzner | mock")
+		apiURL       = flag.String("provider-api", "", "provider API URL override")
+		serverName   = flag.String("server-name", "mythic-1", "server/resource name")
+		stype        = flag.String("type", "cpx11", "server type")
+		region       = flag.String("region", "fsn1", "region/location")
+		image        = flag.String("image", "ubuntu-24.04", "image")
+		domain       = flag.String("domain", "", "FQDN for MYTHIC (sets mythic_url)")
+		sshPub       = flag.String("ssh-pub", "", "pre-existing public key to inject (optional)")
+		dryRun       = flag.Bool("dry-run", false, "validate + plan, perform no remote changes")
+		resume       = flag.Bool("resume", false, "resume from local state file")
+		status       = flag.Bool("status", false, "print last local state and exit")
+		cleanup      = flag.Bool("cleanup", false, "destroy the provisioned server and exit")
+		capabilities = flag.Bool("capabilities", false, "print provider locations, images, server types, and recommendation, then exit")
+		keepFail     = flag.Bool("keep-server-on-failure", false, "do not destroy server on failure")
+		destroyFail  = flag.Bool("destroy-server-on-failure", false, "destroy server on failure")
+		exportHand   = flag.Bool("export-handover", false, "write plaintext handover JSON (default off)")
+		handPass     = flag.String("handover-pass", "", "passphrase to encrypt handover export")
+		stateFile    = flag.String("state-file", "mythic-provision-state.json", "local state file")
+		mode         = flag.String("mode", "cloud", "entry mode: cloud (new machine) | homelab (existing machine)")
+		hlHost       = flag.String("host", "", "homelab: existing machine hostname or IP")
+		hlPort       = flag.String("ssh-port", "22", "homelab: SSH port")
+		hlUser       = flag.String("ssh-user", "root", "homelab: SSH user")
+		hlKey        = flag.String("ssh-key", "", "homelab: private key file (default: discover ~/.ssh key)")
 	)
 	flag.Parse()
 
@@ -86,6 +94,27 @@ func main() {
 			fatal("read hands-file: " + err.Error())
 		}
 		*hands = string(h)
+	}
+
+	if *capabilities {
+		p := &Provisioner{cfg: Config{Provider: ProviderConfig{Kind: *provider, Token: *hands, APIURL: *apiURL}}}
+		prov, err := p.providerFor()
+		if err != nil {
+			fatal(err.Error())
+		}
+		if err := prov.Authenticate(); err != nil {
+			fatal(err.Error())
+		}
+		disc, ok := prov.(CapabilityDiscoverer)
+		if !ok {
+			fatal("provider does not support capability discovery")
+		}
+		caps, err := disc.DiscoverCapabilities()
+		if err != nil {
+			fatal(err.Error())
+		}
+		printProviderCapabilities(caps)
+		return
 	}
 
 	cfg := Config{
@@ -172,6 +201,13 @@ func doCleanup(cfg Config) {
 	prov, err := p.providerFor()
 	if err != nil {
 		fatal(err.Error())
+	}
+	if p.state.ProviderSSHKeyID != "" {
+		if err := prov.DeleteSSHKey(p.state.ProviderSSHKeyID); err != nil {
+			log.warn("provider SSH key cleanup failed: " + err.Error())
+		} else {
+			log.ok("provider SSH key " + p.state.ProviderSSHKeyID + " removed")
+		}
 	}
 	if err := prov.DestroyServer(p.state.ProviderResourceID); err != nil {
 		fatal("destroy failed: " + err.Error())

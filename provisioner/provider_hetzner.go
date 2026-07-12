@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
 )
 
 // hetznerProvider talks to the Hetzner Cloud API using only net/http.
@@ -61,6 +62,49 @@ func (h *hetznerProvider) Authenticate() error {
 	return nil
 }
 
+func (h *hetznerProvider) RegisterSSHKey(name, publicKey string) (string, error) {
+	body := map[string]interface{}{
+		"name":       name,
+		"public_key": publicKey,
+	}
+	data, code, err := h.do("POST", "/ssh_keys", body)
+	if err != nil {
+		return "", err
+	}
+	if code >= 400 {
+		return "", fmt.Errorf("ssh key registration failed: status %d body=%s", code, string(data))
+	}
+	var out struct {
+		SSHKey struct {
+			ID int `json:"id"`
+		} `json:"ssh_key"`
+	}
+	if err := json.Unmarshal(data, &out); err != nil {
+		return "", err
+	}
+	if out.SSHKey.ID == 0 {
+		return "", fmt.Errorf("ssh key registration returned no id")
+	}
+	return fmt.Sprintf("%d", out.SSHKey.ID), nil
+}
+
+func (h *hetznerProvider) DeleteSSHKey(sshKeyID string) error {
+	if sshKeyID == "" {
+		return nil
+	}
+	_, code, err := h.do("DELETE", "/ssh_keys/"+sshKeyID, nil)
+	if err != nil {
+		return err
+	}
+	if code == 404 {
+		return nil
+	}
+	if code >= 400 {
+		return fmt.Errorf("ssh key deletion failed: status %d", code)
+	}
+	return nil
+}
+
 func (h *hetznerProvider) FindServer(name string) (string, string, error) {
 	data, _, err := h.do("GET", "/servers?name="+name, nil)
 	if err != nil {
@@ -88,13 +132,13 @@ func (h *hetznerProvider) FindServer(name string) (string, string, error) {
 	return "", "", nil
 }
 
-func (h *hetznerProvider) CreateServer(name, serverType, region, image, sshPublicKey string) (string, string, error) {
+func (h *hetznerProvider) CreateServer(name, serverType, region, image, sshKeyID string) (string, string, error) {
 	body := map[string]interface{}{
 		"name":        name,
 		"server_type": serverType,
 		"location":    region,
 		"image":       image,
-		"ssh_keys":    []string{sshPublicKey},
+		"ssh_keys":    []string{sshKeyID},
 		"public_net":  map[string]interface{}{"enable_ipv4": true},
 	}
 	data, code, err := h.do("POST", "/servers", body)
@@ -166,3 +210,161 @@ func (h *hetznerProvider) DestroyServer(resourceID string) error {
 
 // ensure interface compliance (helps catch drift at compile time)
 var _ Provider = (*hetznerProvider)(nil)
+
+func (h *hetznerProvider) DiscoverCapabilities() (*ProviderCapabilities, error) {
+	locations, err := h.discoverLocations()
+	if err != nil {
+		return nil, err
+	}
+	images, err := h.discoverUbuntuImages()
+	if err != nil {
+		return nil, err
+	}
+	serverTypes, err := h.discoverServerTypes()
+	if err != nil {
+		return nil, err
+	}
+	caps := &ProviderCapabilities{
+		Locations:         locations,
+		Images:            images,
+		ServerTypes:       serverTypes,
+		RecommendedType:   recommendServerType(serverTypes),
+		RecommendedRegion: recommendLocation(locations),
+		RecommendedImage:  recommendImage(images),
+	}
+	return caps, nil
+}
+
+func (h *hetznerProvider) discoverLocations() ([]ProviderLocation, error) {
+	data, code, err := h.do("GET", "/locations", nil)
+	if err != nil {
+		return nil, err
+	}
+	if code >= 400 {
+		return nil, fmt.Errorf("location discovery failed: status %d", code)
+	}
+	var out struct {
+		Locations []struct {
+			Name        string `json:"name"`
+			Description string `json:"description"`
+			Country     string `json:"country"`
+		} `json:"locations"`
+	}
+	if err := json.Unmarshal(data, &out); err != nil {
+		return nil, err
+	}
+	locations := make([]ProviderLocation, 0, len(out.Locations))
+	for _, l := range out.Locations {
+		locations = append(locations, ProviderLocation{Name: l.Name, Description: l.Description, Country: l.Country})
+	}
+	return locations, nil
+}
+
+func (h *hetznerProvider) discoverUbuntuImages() ([]ProviderImage, error) {
+	data, code, err := h.do("GET", "/images?type=system&per_page=100", nil)
+	if err != nil {
+		return nil, err
+	}
+	if code >= 400 {
+		return nil, fmt.Errorf("image discovery failed: status %d", code)
+	}
+	var out struct {
+		Images []struct {
+			Name         string `json:"name"`
+			Description  string `json:"description"`
+			Architecture string `json:"architecture"`
+			Status       string `json:"status"`
+		} `json:"images"`
+	}
+	if err := json.Unmarshal(data, &out); err != nil {
+		return nil, err
+	}
+	images := []ProviderImage{}
+	for _, i := range out.Images {
+		if !strings.Contains(strings.ToLower(i.Name), "ubuntu") || i.Status != "available" {
+			continue
+		}
+		images = append(images, ProviderImage{Name: i.Name, Description: i.Description, Architecture: i.Architecture})
+	}
+	return images, nil
+}
+
+func (h *hetznerProvider) discoverServerTypes() ([]ProviderServerType, error) {
+	data, code, err := h.do("GET", "/server_types?per_page=100", nil)
+	if err != nil {
+		return nil, err
+	}
+	if code >= 400 {
+		return nil, fmt.Errorf("server type discovery failed: status %d", code)
+	}
+	var out struct {
+		ServerTypes []struct {
+			Name         string  `json:"name"`
+			Description  string  `json:"description"`
+			Cores        int     `json:"cores"`
+			Memory       float64 `json:"memory"`
+			Disk         int     `json:"disk"`
+			Architecture string  `json:"architecture"`
+			Prices       []struct {
+				PriceMonthly struct {
+					Gross string `json:"gross"`
+				} `json:"price_monthly"`
+			} `json:"prices"`
+		} `json:"server_types"`
+	}
+	if err := json.Unmarshal(data, &out); err != nil {
+		return nil, err
+	}
+	types := make([]ProviderServerType, 0, len(out.ServerTypes))
+	for _, st := range out.ServerTypes {
+		monthly := 0.0
+		if len(st.Prices) > 0 {
+			_, _ = fmt.Sscanf(st.Prices[0].PriceMonthly.Gross, "%f", &monthly)
+		}
+		types = append(types, ProviderServerType{Name: st.Name, Description: st.Description, CPU: st.Cores, MemoryGB: st.Memory, DiskGB: st.Disk, Architecture: st.Architecture, MonthlyEUR: monthly})
+	}
+	return types, nil
+}
+
+func recommendLocation(locations []ProviderLocation) string {
+	for _, l := range locations {
+		if l.Name == "fsn1" {
+			return l.Name
+		}
+	}
+	if len(locations) > 0 {
+		return locations[0].Name
+	}
+	return ""
+}
+
+func recommendImage(images []ProviderImage) string {
+	for _, i := range images {
+		if i.Name == "ubuntu-24.04" {
+			return i.Name
+		}
+	}
+	if len(images) > 0 {
+		return images[0].Name
+	}
+	return ""
+}
+
+func recommendServerType(types []ProviderServerType) string {
+	for _, st := range types {
+		if st.Name == "cpx11" {
+			return st.Name
+		}
+	}
+	for _, st := range types {
+		if st.CPU >= 2 && st.MemoryGB >= 2 && st.Architecture == "x86" {
+			return st.Name
+		}
+	}
+	if len(types) > 0 {
+		return types[0].Name
+	}
+	return ""
+}
+
+var _ CapabilityDiscoverer = (*hetznerProvider)(nil)
