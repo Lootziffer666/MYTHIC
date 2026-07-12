@@ -192,9 +192,27 @@ func (p *Provisioner) Run() (Handover, *FailResult) {
 	p.state.BootstrapUser = buser
 	log.ok("bootstrap user created: " + buser)
 
-	// 10-13. install docker + compose + MYTHIC stack
+	// 10. resolve the MYTHIC release artifact before installation. Stable is the
+	// default channel; development requires an explicit image ref and is marked in
+	// state/handover as unverified development input.
+	release, err := resolveMythicRelease(p.cfg.ReleaseChannel, p.cfg.MythicImage)
+	if err != nil {
+		return Handover{}, fail("Resolve MYTHIC release", err.Error(), "choose --release-channel stable or provide --mythic-image with development")
+	}
+	p.state.ReleaseChannel = release.Channel
+	p.state.MythicVersion = release.Version
+	p.state.MythicImage = release.Image
+	p.state.ReleaseChecksum = release.Checksum
+	p.saveState("release-resolved", "")
+	if release.DevInput {
+		log.warn("development MYTHIC image selected; this is unverified development input")
+	} else {
+		log.ok("MYTHIC release resolved: " + release.Image)
+	}
+
+	// 11-14. install docker + compose + MYTHIC stack
 	if !p.cfg.DryRun {
-		if err = installSeam(ip, p.keyFp, buser, p.cfg.Domain); err != nil {
+		if err = installSeam(ip, p.keyFp, buser, p.cfg.Domain, release.Image); err != nil {
 			return Handover{}, fail("Install MYTHIC", err.Error(), "bootstrap retained for recovery; rerun --resume")
 		}
 	}
@@ -243,6 +261,9 @@ func (p *Provisioner) Run() (Handover, *FailResult) {
 		BootstrapUserRemoved: false,
 		TemporaryKeyRemoved:  false,
 		CleanupVerified:      false,
+		MythicVersion:        release.Version,
+		MythicImage:          release.Image,
+		ReleaseChannel:       release.Channel,
 	}
 	file, serr := saveHandover(h, p.cfg.ExportHandover, p.cfg.HandoverPass)
 	if serr != nil {

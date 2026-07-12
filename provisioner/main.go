@@ -52,6 +52,8 @@ func main() {
 		destroyFail  = flag.Bool("destroy-server-on-failure", false, "destroy server on failure")
 		exportHand   = flag.Bool("export-handover", false, "write plaintext handover JSON (default off)")
 		handPass     = flag.String("handover-pass", "", "passphrase to encrypt handover export")
+		relChannel   = flag.String("release-channel", "stable", "MYTHIC release channel: stable | development")
+		mythicImage  = flag.String("mythic-image", "", "explicit MYTHIC image ref/digest (requires --release-channel development)")
 		stateFile    = flag.String("state-file", "mythic-provision-state.json", "local state file")
 		mode         = flag.String("mode", "cloud", "entry mode: cloud (new machine) | homelab (existing machine)")
 		hlHost       = flag.String("host", "", "homelab: existing machine hostname or IP")
@@ -131,6 +133,8 @@ func main() {
 		DryRun:         *dryRun,
 		ExportHandover: *exportHand,
 		HandoverPass:   *handPass,
+		ReleaseChannel: *relChannel,
+		MythicImage:    *mythicImage,
 		StateFile:      *stateFile,
 	}
 
@@ -223,6 +227,8 @@ func printHandover(h Handover) {
 	fmt.Printf("MYTHIC URL:       %s\n", h.MythicURL)
 	fmt.Printf("SSH fingerprint:  %s\n", h.SSHHostFingerprint)
 	fmt.Printf("Resource ID:      %s\n", h.ProviderResourceID)
+	fmt.Printf("MYTHIC release:  %s (%s)\n", h.MythicVersion, h.ReleaseChannel)
+	fmt.Printf("MYTHIC image:    %s\n", h.MythicImage)
 	fmt.Printf("Healthcheck:      %s\n", h.HealthcheckStatus)
 	fmt.Printf("Bootstrap removed:%v\n", h.BootstrapUserRemoved)
 	fmt.Printf("Temp key removed: %v\n", h.TemporaryKeyRemoved)

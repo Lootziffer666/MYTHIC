@@ -35,7 +35,7 @@ const composeYAML = `services:
     networks: [mythic]
     restart: unless-stopped
   mythic:
-    image: ghcr.io/lootziffer666/mythic:latest
+    image: %MYTHIC_IMAGE%
     container_name: mythic
     environment:
       - MYTHIC_BASE_DOMAIN=%DOMAIN%
@@ -71,7 +71,7 @@ func waitForSSH(ip, keyPath string) error {
 	return fmt.Errorf("SSH not reachable after waiting")
 }
 
-func installDockerAndMythic(ip, keyPath, user, domain string) error {
+func installDockerAndMythic(ip, keyPath, user, domain, mythicImage string) error {
 	script := `
 set -e
 if ! command -v docker >/dev/null 2>&1; then
@@ -81,7 +81,8 @@ mkdir -p /opt/mythic
 cat > /opt/mythic/docker-compose.yml <<'YAML'
 ` + indent(composeYAML, 2) + `
 YAML
-sed -i 's/%DOMAIN%/` + domain + `/g' /opt/mythic/docker-compose.yml
+sed -i 's#%DOMAIN%#` + domain + `#g' /opt/mythic/docker-compose.yml
+sed -i 's#%MYTHIC_IMAGE%#` + mythicImage + `#g' /opt/mythic/docker-compose.yml
 cd /opt/mythic && docker compose up -d
 `
 	if _, err := runSSH(ip, user, keyPath, "sudo bash -c "+shellQuote(script)); err != nil {
