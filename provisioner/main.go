@@ -45,8 +45,26 @@ func main() {
 		exportHand  = flag.Bool("export-handover", false, "write plaintext handover JSON (default off)")
 		handPass    = flag.String("handover-pass", "", "passphrase to encrypt handover export")
 		stateFile   = flag.String("state-file", "mythic-provision-state.json", "local state file")
+		mode        = flag.String("mode", "cloud", "entry mode: cloud (new machine) | homelab (existing machine)")
+		hlHost      = flag.String("host", "", "homelab: existing machine hostname or IP")
+		hlPort      = flag.String("ssh-port", "22", "homelab: SSH port")
+		hlUser      = flag.String("ssh-user", "root", "homelab: SSH user")
+		hlKey       = flag.String("ssh-key", "", "homelab: private key file (default: discover ~/.ssh key)")
 	)
 	flag.Parse()
+
+	// --mode homelab: existing-machine preflight (no cloud token required).
+	if *mode == "homelab" {
+		if err := runHomelabPreflight(HomelabInput{
+			Host:    *hlHost,
+			SSHPort: *hlPort,
+			SSHUser: *hlUser,
+			KeyPath: *hlKey,
+		}); err != nil {
+			fatal(err.Error())
+		}
+		return
+	}
 
 	// --status
 	if *status {

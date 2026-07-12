@@ -75,16 +75,22 @@ func (k *sshKeyPair) writeTempKey(dir string) (string, error) {
 
 // hostKeyFingerprint performs a raw handshake to obtain and hash the host key.
 func hostKeyFingerprint(ip string) (string, error) {
+	return hostKeyFingerprintAt(ip, "22", "root")
+}
+
+// hostKeyFingerprintAt is the parameterized form used by the homelab mode, which
+// may target an arbitrary SSH port and user rather than the cloud default root@22.
+func hostKeyFingerprintAt(ip, port, user string) (string, error) {
 	var captured ssh.PublicKey
 	done := make(chan struct{})
-	host := net.JoinHostPort(ip, "22")
+	host := net.JoinHostPort(ip, port)
 	cb := func(hostname string, remote net.Addr, k ssh.PublicKey) error {
 		captured = k
 		close(done)
 		return nil
 	}
 	cfg := &ssh.ClientConfig{
-		User:            "root",
+		User:            user,
 		HostKeyCallback: cb,
 		Timeout:         10 * time.Second,
 	}
@@ -101,8 +107,15 @@ func hostKeyFingerprint(ip string) (string, error) {
 	return "SHA256:" + hex.EncodeToString(h[:]), nil
 }
 
-// runSSH runs a command on the server as the given user using the provided key file.
+// runSSH runs a command on the server as the given user using the provided key
+// file, against the cloud default SSH port 22.
 func runSSH(ip, user, keyPath, command string) (string, error) {
+	return sshRunAt(ip, "22", user, keyPath, command)
+}
+
+// sshRunAt is the parameterized executor shared by the cloud (port 22) and
+// homelab (arbitrary port) paths so the dial boilerplate lives in one place.
+func sshRunAt(ip, port, user, keyPath, command string) (string, error) {
 	keyBytes, err := os.ReadFile(keyPath)
 	if err != nil {
 		return "", err
@@ -117,7 +130,7 @@ func runSSH(ip, user, keyPath, command string) (string, error) {
 		HostKeyCallback: ssh.InsecureIgnoreHostKey(), // fingerprint already captured + logged
 		Timeout:         30 * time.Second,
 	}
-	client, err := ssh.Dial("tcp", net.JoinHostPort(ip, "22"), cfg)
+	client, err := ssh.Dial("tcp", net.JoinHostPort(ip, port), cfg)
 	if err != nil {
 		return "", err
 	}
