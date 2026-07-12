@@ -12,15 +12,17 @@ It runs in **live mode** when Docker + nixpacks are present, and a **simulation 
 
 ## Next Mission — Final Fable Run
 
-The next implementation run is the production-closure run defined in:
+The next implementation run is the one-click production-closure run defined in:
 
 - `.kilocode/rules/memory-bank/FABLE_FINAL_RUN.md`
 
 That document is the source of truth. The run must not fork or rebuild another deployment platform, must not redesign the landing page, and must not expand into a full Coolify replacement.
 
-Priority is the missing trust layer: Project/Release history, webhook auto-deploy, durable evidence and log streaming, health-gated promotion, rollback, encrypted project secrets with redaction, internal-only services, bounded AI repair, deterministic diagnostics, and a mobile-first PWA control surface.
+The **Provisioner is the front door and highest priority**. MYTHIC's differentiator is the complete path from temporary provider credentials to a newly created server, secure MYTHIC installation, DNS/TLS closure, verified service response, removal of temporary access, and human handover. Competing deploy platforms usually begin with an existing server.
 
-P0 must be complete and green before P1 preview/API/security-advisory work begins. No success claim without tests and demonstrated evidence.
+After the Provisioner path is structurally complete, remaining implementation budget goes to Project/Release history, webhook auto-deploy, durable logs, health-gated promotion, rollback, encrypted project secrets, internal-only services, bounded AI repair, deterministic diagnostics, and a mobile-first PWA control surface.
+
+Fable must not create, expand, repair, or execute verification suites and must not perform manual acceptance work. Existing verification files remain untouched for the later Opus handoff. Fable ends with the exact label **UNVERIFIED HANDOFF TO OPUS**.
 
 ## Recently Completed
 
@@ -43,6 +45,7 @@ P0 must be complete and green before P1 preview/API/security-advisory work begin
 - [x] **Coolify CLI**: `scripts/coolify-deploy.sh` POSTs to `/api/v1/applications` to deploy without the UI
 - [x] `docker-compose.yml` (Traefik + app) and `Dockerfile` (installs nixpacks + docker CLI)
 - [x] Competitive re-audit completed and translated into the final Fable production-closure contract.
+- [x] Final contract refocused around the Provisioner; all new verification work deferred to Opus.
 
 ## Current Structure
 
@@ -59,7 +62,8 @@ P0 must be complete and green before P1 preview/API/security-advisory work begin
 | `src/app/api/**` | API routes |
 | `scripts/coolify-deploy.sh` | Coolify API automation CLI |
 | `docker-compose.yml` / `Dockerfile` | Traefik reverse proxy + app image |
-| `.kilocode/rules/memory-bank/FABLE_FINAL_RUN.md` | Final production-closure scope, order, tests, and finish contract |
+| `provisioner/` | Stateless server creation, secure bootstrap, MYTHIC installation, handover, cleanup, and recovery |
+| `.kilocode/rules/memory-bank/FABLE_FINAL_RUN.md` | Provisioner-first final implementation scope and Opus handoff contract |
 
 ## Environment Notes
 
@@ -82,3 +86,4 @@ P0 must be complete and green before P1 preview/API/security-advisory work begin
 | Now | Resolved the interrupted patch follow-up by restoring valid provisioner compose YAML quoting, implementing the cinematic landing-page UI, and adding a reproducible procedural video generator. |
 | Now | Upgraded the homepage into a high-end MYTHIC launch experience with a raw WebGL2 particle/shader backdrop, stronger hero narrative, proof points, and refined ritual cards. |
 | 2026-07-12 | Re-audited the supplied deployment ecosystem and committed the final Fable production-closure specification. |
+| 2026-07-12 | Removed all new verification work from Fable's scope and expanded the Provisioner-first one-click implementation contract. |
