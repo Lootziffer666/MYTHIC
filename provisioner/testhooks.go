@@ -4,14 +4,15 @@ package main
 // In production these are nil and the real implementations are used.
 
 var (
-	hookRunSSH          func(ip, user, keyPath, cmd string) (string, error)
-	hookHostFingerprint func(ip string) (string, error)
-	hookWaitSSH         func(ip, keyPath string) error
-	hookInstall         func(ip, keyPath, user, domain string) error
-	hookWaitContainer   func(ip, keyPath, user string) error
-	hookUserGone        func(ip, keyPath, user string) bool
-	hookWaitMythic      func(mythicURL string) (bool, error)
-	hookInjectBrain     func(mythicURL, adminToken, llmKey, llmBase, llmModel string) error
+	hookRunSSH           func(ip, user, keyPath, cmd string) (string, error)
+	hookHostFingerprint  func(ip string) (string, error)
+	hookWaitSSH          func(ip, keyPath string) error
+	hookInstall          func(ip, keyPath, user, domain string) error
+	hookInstallWithImage func(ip, keyPath, user, domain, mythicImage string) error
+	hookWaitContainer    func(ip, keyPath, user string) error
+	hookUserGone         func(ip, keyPath, user string) bool
+	hookWaitMythic       func(mythicURL string) (bool, error)
+	hookInjectBrain      func(mythicURL, adminToken, llmKey, llmBase, llmModel string) error
 	// forceExternalHealthFail lets tests trigger a deterministic failure at the
 	// external HTTPS healthcheck stage (no real network required).
 	forceExternalHealthFail bool
@@ -38,11 +39,14 @@ func waitSSHSeam(ip, keyPath string) error {
 	return waitForSSH(ip, keyPath)
 }
 
-func installSeam(ip, keyPath, user, domain string) error {
+func installSeam(ip, keyPath, user, domain, mythicImage string) error {
+	if hookInstallWithImage != nil {
+		return hookInstallWithImage(ip, keyPath, user, domain, mythicImage)
+	}
 	if hookInstall != nil {
 		return hookInstall(ip, keyPath, user, domain)
 	}
-	return installDockerAndMythic(ip, keyPath, user, domain)
+	return installDockerAndMythic(ip, keyPath, user, domain, mythicImage)
 }
 
 func waitContainerSeam(ip, keyPath, user string) error {
