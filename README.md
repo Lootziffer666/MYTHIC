@@ -29,6 +29,29 @@ MYTHIC_BASE_DOMAIN=example.com docker compose up -d --build
 
 Open `https://deploy.example.com`, paste a repository URL, and click deploy.
 
+## Multideploy
+
+Deploy several of your own repos together as one stack, in dependency order,
+with each member able to reference an already-deployed sibling's real URL:
+
+1. **Settings → GitHub token**: a fine-grained PAT (read-only `Contents` +
+   `Metadata` is enough), encrypted at rest the same way as LLM keys.
+2. **Dashboard → Multideploy**: pick from a list that only ever shows repos
+   you own (`affiliation=owner`, checked by GitHub's API itself, re-verified
+   server-side on every stack you create — never trusted from the client
+   alone). For each selected repo, give it a short local key and, optionally,
+   environment variables that can reference another selected repo:
+   `BELLOWS_BASE_URL = ${bellows.url}/v1`.
+3. **Deploy**: MYTHIC topologically sorts the members by those references,
+   then runs the normal single-repo pipeline (clone → analyze → build →
+   deploy) for each one in order, resolving `${key.url}` / `${key.domain}`
+   placeholders against the real deployment as soon as it's live before
+   starting the next member. A member whose dependency failed is marked
+   `skipped`, never silently deployed with an unresolved placeholder.
+4. Each member's own deployment detail page (logs, redeploy, AI-fix) works
+   exactly as it does for a single deployment — multideploy only adds the
+   ordering and wiring around the existing pipeline, it doesn't replace it.
+
 ## Configuration
 
 MYTHIC works without most manual configuration by inspecting Docker and Traefik at runtime. Environment variables are optional overrides.
@@ -55,11 +78,12 @@ For a Hetzner server, the safe default is simple: point `deploy.<base-domain>` a
 ## Architecture
 
 - **Next.js UI/API**: wizard, dashboard, settings, and deployment API routes.
-- **SQLite store**: deployment records, logs, and local LLM provider metadata.
+- **SQLite store**: deployment records, logs, local LLM provider metadata, and multideploy stacks.
 - **nixpacks + Docker**: stack detection and image builds.
 - **Traefik**: reverse proxy and automatic TLS.
 - **AI auto-fix**: optional OpenAI-compatible build failure diagnosis and patching.
 - **Provisioner**: Go binary for server creation and first MYTHIC install handover.
+- **Multideploy**: own-repos-only GitHub listing + dependency-ordered batch deploys, reusing the single-repo pipeline per member (`src/lib/stack-engine.ts`).
 
 ## Development
 
@@ -69,6 +93,7 @@ Use Bun for local development commands:
 bun install
 bun typecheck
 bun lint
+bun run test
 bun run build
 ```
 

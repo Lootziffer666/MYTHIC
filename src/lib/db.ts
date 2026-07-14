@@ -2,7 +2,7 @@ import Database from "better-sqlite3";
 import fs from "node:fs";
 import path from "node:path";
 import { CONFIG } from "./config";
-import type { DeploymentRecord } from "./types";
+import type { DeploymentRecord, StackMemberRecord, StackPhase, StackRecord } from "./types";
 
 let db: Database.Database | null = null;
 
@@ -47,6 +47,30 @@ function getDb(): Database.Database {
       api_key_data TEXT NOT NULL,
       is_default INTEGER NOT NULL DEFAULT 0,
       created_at INTEGER NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS stacks (
+      id TEXT PRIMARY KEY,
+      name TEXT NOT NULL,
+      status TEXT NOT NULL,
+      createdAt INTEGER NOT NULL,
+      updatedAt INTEGER NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS stack_members (
+      stackId TEXT NOT NULL REFERENCES stacks(id) ON DELETE CASCADE,
+      key TEXT NOT NULL,
+      repoUrl TEXT NOT NULL,
+      branch TEXT NOT NULL,
+      name TEXT,
+      domain TEXT,
+      port INTEGER,
+      envTemplate TEXT NOT NULL DEFAULT '{}',
+      memberOrder INTEGER NOT NULL,
+      status TEXT NOT NULL DEFAULT 'pending',
+      deploymentId TEXT,
+      error TEXT,
+      PRIMARY KEY (stackId, key)
     );
   `);
   return db;
@@ -160,6 +184,153 @@ export const store = {
 
   remove(id: string): void {
     getDb().prepare("DELETE FROM deployments WHERE id = ?").run(id);
+  },
+};
+
+// --- multideploy: a stack is several deployments (each a normal DeploymentRecord,
+// created and run through the same engine.ts pipeline) plus the ordering/env-wiring
+// between them. Members live in their own table so a stack can be listed/updated
+// without touching the deployments table's shape at all. ---
+
+type StackRow = { id: string; name: string; status: string; createdAt: number; updatedAt: number };
+type StackMemberRow = {
+  stackId: string;
+  key: string;
+  repoUrl: string;
+  branch: string;
+  name: string | null;
+  domain: string | null;
+  port: number | null;
+  envTemplate: string;
+  memberOrder: number;
+  status: string;
+  deploymentId: string | null;
+  error: string | null;
+};
+
+export interface StackMemberInsert {
+  key: string;
+  repoUrl: string;
+  branch: string;
+  name?: string;
+  domain?: string;
+  port?: number;
+  envTemplate: Record<string, string>;
+  order: number;
+}
+
+function memberRowToRecord(row: StackMemberRow): StackMemberRecord {
+  return {
+    key: row.key,
+    repoUrl: row.repoUrl,
+    branch: row.branch,
+    order: row.memberOrder,
+    status: row.status as StackMemberRecord["status"],
+    deploymentId: row.deploymentId,
+    error: row.error,
+  };
+}
+
+function loadMembers(stackId: string): StackMemberRecord[] {
+  const rows = getDb()
+    .prepare("SELECT * FROM stack_members WHERE stackId = ? ORDER BY memberOrder ASC")
+    .all(stackId) as StackMemberRow[];
+  return rows.map(memberRowToRecord);
+}
+
+function stackRowToRecord(row: StackRow): StackRecord {
+  return {
+    id: row.id,
+    name: row.name,
+    status: row.status as StackPhase,
+    members: loadMembers(row.id),
+    createdAt: row.createdAt,
+    updatedAt: row.updatedAt,
+  };
+}
+
+export const stackStore = {
+  create(name: string, members: StackMemberInsert[]): StackRecord {
+    const db = getDb();
+    const id = `stack_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`;
+    const now = Date.now();
+    const insertStack = db.prepare(
+      "INSERT INTO stacks (id, name, status, createdAt, updatedAt) VALUES (?, ?, 'queued', ?, ?)"
+    );
+    const insertMember = db.prepare(
+      `INSERT INTO stack_members
+       (stackId, key, repoUrl, branch, name, domain, port, envTemplate, memberOrder, status)
+       VALUES (@stackId, @key, @repoUrl, @branch, @name, @domain, @port, @envTemplate, @memberOrder, 'pending')`
+    );
+    db.transaction(() => {
+      insertStack.run(id, name, now, now);
+      for (const m of members) {
+        insertMember.run({
+          stackId: id,
+          key: m.key,
+          repoUrl: m.repoUrl,
+          branch: m.branch,
+          name: m.name ?? null,
+          domain: m.domain ?? null,
+          port: m.port ?? null,
+          envTemplate: JSON.stringify(m.envTemplate),
+          memberOrder: m.order,
+        });
+      }
+    })();
+    return this.get(id)!;
+  },
+
+  list(): StackRecord[] {
+    const rows = getDb().prepare("SELECT * FROM stacks ORDER BY createdAt DESC").all() as StackRow[];
+    return rows.map(stackRowToRecord);
+  },
+
+  get(id: string): StackRecord | null {
+    const row = getDb().prepare("SELECT * FROM stacks WHERE id = ?").get(id) as StackRow | undefined;
+    return row ? stackRowToRecord(row) : null;
+  },
+
+  /** Raw env template for a member, parsed — used by the stack engine to resolve placeholders. */
+  getMemberEnvTemplate(stackId: string, key: string): Record<string, string> {
+    const row = getDb()
+      .prepare("SELECT envTemplate FROM stack_members WHERE stackId = ? AND key = ?")
+      .get(stackId, key) as { envTemplate: string } | undefined;
+    return row ? JSON.parse(row.envTemplate) : {};
+  },
+
+  getMemberRaw(stackId: string, key: string): StackMemberRow | null {
+    const row = getDb()
+      .prepare("SELECT * FROM stack_members WHERE stackId = ? AND key = ?")
+      .get(stackId, key) as StackMemberRow | undefined;
+    return row ?? null;
+  },
+
+  updateStatus(id: string, status: StackPhase): void {
+    getDb().prepare("UPDATE stacks SET status = ?, updatedAt = ? WHERE id = ?").run(status, Date.now(), id);
+  },
+
+  updateMember(
+    stackId: string,
+    key: string,
+    patch: Partial<{ status: string; deploymentId: string | null; error: string | null }>
+  ): void {
+    const current = getDb()
+      .prepare("SELECT status, deploymentId, error FROM stack_members WHERE stackId = ? AND key = ?")
+      .get(stackId, key) as { status: string; deploymentId: string | null; error: string | null } | undefined;
+    if (!current) return;
+    const next = { ...current, ...patch };
+    getDb()
+      .prepare("UPDATE stack_members SET status = ?, deploymentId = ?, error = ? WHERE stackId = ? AND key = ?")
+      .run(next.status, next.deploymentId, next.error, stackId, key);
+    getDb().prepare("UPDATE stacks SET updatedAt = ? WHERE id = ?").run(Date.now(), stackId);
+  },
+
+  remove(id: string): void {
+    getDb().transaction(() => {
+      getDb().prepare("DELETE FROM stack_members WHERE stackId = ?").run(id);
+      getDb().prepare("DELETE FROM stacks WHERE id = ?").run(id);
+    })();
   },
 };
 

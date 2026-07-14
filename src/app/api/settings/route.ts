@@ -5,6 +5,9 @@ import {
   updateProvider,
   deleteProvider,
   getProviderSecret,
+  hasGithubToken,
+  setGithubToken,
+  clearGithubToken,
 } from "@/lib/settings";
 import { getSetting, setSetting } from "@/lib/db";
 import { encryptionReady } from "@/lib/crypto";
@@ -24,6 +27,7 @@ export async function GET() {
     aiSource: aiConfigSource(),
     providers,
     defaultProviderId: providers.find((p) => p.isDefault)?.id ?? null,
+    hasGithubToken: hasGithubToken(),
     settings: {
       baseDomain: getSetting("baseDomain"),
       autoFix: getSetting("autoFix"),
@@ -71,6 +75,20 @@ export async function POST(req: Request) {
     const { key, value } = body;
     if (!key) return NextResponse.json({ error: "key required" }, { status: 400 });
     setSetting(String(key), String(value));
+    return NextResponse.json({ ok: true });
+  }
+
+  // --- GitHub token (multideploy's own-repos listing + private-repo clones) ---
+  if (body.action === "setGithubToken") {
+    if (!body.token || typeof body.token !== "string") {
+      return NextResponse.json({ error: "token required" }, { status: 400 });
+    }
+    setGithubToken(body.token);
+    return NextResponse.json({ ok: true });
+  }
+
+  if (body.action === "clearGithubToken") {
+    clearGithubToken();
     return NextResponse.json({ ok: true });
   }
 

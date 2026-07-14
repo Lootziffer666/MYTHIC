@@ -12,6 +12,20 @@ interface Provider {
   hasKey: boolean;
 }
 
+// Order matters here: Google + OpenAI first, Anthropic right below, then everyone
+// else led by OpenRouter and Kilo — the ranking asked for when this was scoped.
+const LLM_KEY_LINKS: { name: string; href: string }[] = [
+  { name: "Google AI Studio", href: "https://aistudio.google.com/apikey" },
+  { name: "OpenAI", href: "https://platform.openai.com/api-keys" },
+  { name: "Anthropic", href: "https://console.anthropic.com/settings/keys" },
+  { name: "OpenRouter", href: "https://openrouter.ai/keys" },
+  { name: "Kilo Code", href: "https://kilocode.ai" },
+  { name: "Groq", href: "https://console.groq.com/keys" },
+  { name: "Mistral", href: "https://console.mistral.ai/api-keys" },
+  { name: "Together AI", href: "https://api.together.ai/settings/api-keys" },
+  { name: "DeepSeek", href: "https://platform.deepseek.com/api_keys" },
+];
+
 export default function SettingsPage() {
   const [providers, setProviders] = useState<Provider[]>([]);
   const [encryptedAtRest, setEncryptedAtRest] = useState(false);
@@ -25,12 +39,17 @@ export default function SettingsPage() {
   const [apiKey, setApiKey] = useState("");
   const [makeDefault, setMakeDefault] = useState(true);
 
+  const [hasGithubToken, setHasGithubToken] = useState(false);
+  const [githubToken, setGithubTokenInput] = useState("");
+  const [githubBusy, setGithubBusy] = useState(false);
+
   async function load() {
     const res = await fetch("/api/settings");
     const data = await res.json();
     setProviders(data.providers || []);
     setEncryptedAtRest(!!data.encryptedAtRest);
     setAiSource(data.aiSource || "none");
+    setHasGithubToken(!!data.hasGithubToken);
   }
 
   useEffect(() => {
@@ -42,6 +61,7 @@ export default function SettingsPage() {
         setProviders(data.providers || []);
         setEncryptedAtRest(!!data.encryptedAtRest);
         setAiSource(data.aiSource || "none");
+        setHasGithubToken(!!data.hasGithubToken);
       })
       .catch(() => {
         if (!cancelled) setAiSource("unavailable");
@@ -50,6 +70,39 @@ export default function SettingsPage() {
       cancelled = true;
     };
   }, []);
+
+  async function saveGithubToken(e: React.FormEvent) {
+    e.preventDefault();
+    setGithubBusy(true);
+    setMsg(null);
+    try {
+      const res = await fetch("/api/settings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "setGithubToken", token: githubToken }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Save failed");
+      setGithubTokenInput("");
+      setMsg("GitHub token saved (encrypted at rest). Multideploy can now list your own repos.");
+      await load();
+    } catch (err) {
+      setMsg(err instanceof Error ? err.message : String(err));
+    } finally {
+      setGithubBusy(false);
+    }
+  }
+
+  async function clearGithubToken() {
+    setGithubBusy(true);
+    await fetch("/api/settings", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "clearGithubToken" }),
+    });
+    setGithubBusy(false);
+    await load();
+  }
 
   async function save(e: React.FormEvent) {
     e.preventDefault();
@@ -174,6 +227,74 @@ export default function SettingsPage() {
               <li>secrets, API keys, or database contents</li>
             </ul>
           </div>
+        </div>
+      </section>
+
+      <section className="glass mt-6 rounded-2xl p-5">
+        <h2 className="text-sm font-semibold uppercase tracking-wide text-neutral-400">
+          Multideploy &middot; GitHub access
+        </h2>
+        <p className="mt-2 text-sm text-neutral-300">
+          Multideploy only ever lists and deploys repos <strong>you own</strong> — enforced by
+          GitHub&apos;s own <code className="rounded bg-black/30 px-1">affiliation=owner</code> filter,
+          re-checked server-side on every stack you create, never a repo picked from someone else&apos;s
+          account. A{" "}
+          <a className="text-cyan-300 underline" href="https://github.com/settings/tokens?type=beta" target="_blank" rel="noreferrer">
+            fine-grained personal access token
+          </a>{" "}
+          with read-only <code className="rounded bg-black/30 px-1">Contents</code> and{" "}
+          <code className="rounded bg-black/30 px-1">Metadata</code> permission is enough — it is
+          stored encrypted the same way as your LLM keys and only ever sent to api.github.com.
+        </p>
+        <div className="mt-3 flex items-center gap-2 text-xs">
+          <span className={`rounded-full border px-3 py-1 ${hasGithubToken ? "border-emerald-400/40 text-emerald-300" : "border-amber-400/40 text-amber-300"}`}>
+            {hasGithubToken ? "🔒 Token saved" : "No token yet"}
+          </span>
+        </div>
+        <form onSubmit={saveGithubToken} className="mt-4 flex flex-wrap items-end gap-3">
+          <div className="flex-1 min-w-[16rem]">
+            <Label>GitHub token</Label>
+            <input
+              className="input"
+              type="password"
+              value={githubToken}
+              onChange={(e) => setGithubTokenInput(e.target.value)}
+              placeholder="github_pat_…"
+            />
+          </div>
+          <button className="btn-primary" disabled={githubBusy || !githubToken}>
+            {githubBusy ? "Saving…" : "Save token"}
+          </button>
+          {hasGithubToken && (
+            <button type="button" className="btn-danger" disabled={githubBusy} onClick={clearGithubToken}>
+              Clear
+            </button>
+          )}
+        </form>
+        <Link href="/stacks/new" className="btn-ghost mt-4 inline-flex text-sm">
+          Go to Multideploy →
+        </Link>
+      </section>
+
+      <section className="glass mt-6 rounded-2xl p-5">
+        <h2 className="text-sm font-semibold uppercase tracking-wide text-neutral-400">
+          Where to get an LLM API key
+        </h2>
+        <p className="mt-2 text-sm text-neutral-300">
+          Reference only — MYTHIC never auto-registers you anywhere. Pick one, get a key, paste it above.
+        </p>
+        <div className="mt-3 flex flex-wrap gap-2 text-xs">
+          {LLM_KEY_LINKS.map((l) => (
+            <a
+              key={l.href}
+              href={l.href}
+              target="_blank"
+              rel="noreferrer"
+              className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1.5 text-neutral-200 backdrop-blur hover:border-white/25 hover:text-white"
+            >
+              {l.name}
+            </a>
+          ))}
         </div>
       </section>
 
