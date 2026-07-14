@@ -72,9 +72,9 @@ export async function buildWithDockerfile(
   docker: Docker,
   onLog?: (line: string) => void
 ): Promise<string> {
-  const dockerfile = generateDockerfile(analysis);
+  const dockerfile = analysis.dockerfile?.trim() || generateDockerfile(analysis);
   fs.writeFileSync(path.join(repoDir, "Dockerfile.mythic"), dockerfile);
-  onLog?.(`Generated Dockerfile:\n${dockerfile}`);
+  onLog?.(`${analysis.dockerfile ? "Using AI-supplied" : "Generated"} Dockerfile:\n${dockerfile}`);
 
   await new Promise<void>((resolve, reject) => {
     docker.buildImage(
