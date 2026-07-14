@@ -5,6 +5,24 @@ import fs from "node:fs";
 import path from "node:path";
 import type Docker from "dockerode";
 
+function buildProcessEnv(): NodeJS.ProcessEnv {
+  const env: NodeJS.ProcessEnv = { ...process.env };
+
+  // MYTHIC itself runs with NODE_ENV=production. Passing that value into
+  // Nixpacks makes package managers omit devDependencies before the app build,
+  // which removes Tailwind/PostCSS/TypeScript and breaks most modern frontends.
+  delete env.NODE_ENV;
+  delete env.NPM_CONFIG_PRODUCTION;
+  delete env.NPM_CONFIG_OMIT;
+
+  // Keep build tooling available regardless of npm/yarn defaults inherited
+  // from the MYTHIC runtime container.
+  env.NPM_CONFIG_INCLUDE = "dev";
+  env.YARN_PRODUCTION = "false";
+
+  return env;
+}
+
 export function generateDockerfile(analysis: AnalysisResult): string {
   const base = analysis.baseImage || "node:20-slim";
   const build = analysis.buildCommand;
@@ -35,9 +53,14 @@ export function generateDockerfile(analysis: AnalysisResult): string {
 
   if (isNode) {
     lines.push(`COPY package*.json ./`);
-    lines.push(`RUN npm install --omit=dev || npm install`);
+    // Frontend compilers and CSS processors normally live in devDependencies.
+    // They are required while building even though the resulting app runs in
+    // production mode afterwards.
+    lines.push(`ENV NODE_ENV=development`);
+    lines.push(`RUN npm ci --include=dev || npm install --include=dev`);
     lines.push(`COPY . .`);
     if (build) lines.push(`RUN ${build}`);
+    lines.push(`ENV NODE_ENV=production`);
     lines.push(`EXPOSE ${port}`);
     lines.push(`CMD ${start}`);
   } else {
@@ -59,6 +82,7 @@ export async function buildWithNixpacks(
   const { stdout, stderr } = await execFileAsync(CONFIG.nixpacksBin, args, {
     timeout: 1000 * 60 * 15,
     maxBuffer: 1024 * 1024 * 30,
+    env: buildProcessEnv(),
   });
   if (stdout.trim()) onLog?.(stdout);
   if (stderr.trim()) onLog?.(stderr);
