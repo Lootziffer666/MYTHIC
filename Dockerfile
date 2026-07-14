@@ -54,6 +54,8 @@ ENV HOSTNAME=0.0.0.0
 
 # Nixpacks is a standalone Rust CLI. It shells out to the Docker client for
 # image builds, while the daemon is reached through the mounted host socket.
+# Debian Bookworm publishes the client through docker.io; docker-cli is not a
+# package in the base image's configured repositories.
 ARG NIXPACKS_VERSION=1.41.0
 RUN apt-get update \
     && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
@@ -61,7 +63,7 @@ RUN apt-get update \
         curl \
         git \
         tar \
-        docker-cli \
+        docker.io \
         libstdc++6 \
     && curl -sSL https://nixpacks.com/install.sh \
         | NIXPACKS_VERSION="${NIXPACKS_VERSION}" bash -s -- --yes \
