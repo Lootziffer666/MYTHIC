@@ -54,7 +54,10 @@ export default function DeploymentDetail({ id }: { id: string }) {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "AI fix failed");
       if (data.fix) {
-        setAiMessage(`🤖 ${data.fix.diagnosis}\n${data.fix.explanation}`);
+        const patched = data.fix.sourcePatches?.length
+          ? `\nPatched source files: ${data.fix.sourcePatches.map((patch: { path: string }) => patch.path).join(", ")}`
+          : "";
+        setAiMessage(`🤖 ${data.fix.diagnosis}\n${data.fix.explanation}${patched}`);
       } else {
         setAiMessage(data.error || "AI returned no fix.");
       }
@@ -120,7 +123,7 @@ export default function DeploymentDetail({ id }: { id: string }) {
       <div className="mt-4 flex flex-wrap gap-3">
         {deployment.status === "failed" && (
           <button className="btn-primary" onClick={aiFix} disabled={aiBusy}>
-            {aiBusy ? "Asking AI…" : "✨ Ask AI to fix"}
+            {aiBusy ? "Asking AI…" : "✨ One-click AI fix"}
           </button>
         )}
         <button className="btn-ghost" onClick={redeploy} disabled={busy}>↻ Redeploy</button>

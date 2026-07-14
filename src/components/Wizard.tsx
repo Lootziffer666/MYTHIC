@@ -148,7 +148,14 @@ export default function Wizard() {
       const res = await fetch(`/api/deployments/${deployment.id}/ai-fix`, { method: "POST" });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "AI fix failed");
-      setAiMessage(data.fix ? `🤖 ${data.fix.diagnosis}\n${data.fix.explanation}` : data.error || "No fix.");
+      if (data.fix) {
+        const patched = data.fix.sourcePatches?.length
+          ? `\nPatched source files: ${data.fix.sourcePatches.map((patch: { path: string }) => patch.path).join(", ")}`
+          : "";
+        setAiMessage(`🤖 ${data.fix.diagnosis}\n${data.fix.explanation}${patched}`);
+      } else {
+        setAiMessage(data.error || "No fix.");
+      }
     } catch (err) {
       setAiMessage(err instanceof Error ? err.message : String(err));
     } finally {
@@ -255,7 +262,7 @@ export default function Wizard() {
             <Link href="/dashboard" className="btn-ghost">View dashboard →</Link>
             {deployment.status === "failed" && (
               <Button onClick={handleAiFix} disabled={aiBusy}>
-                {aiBusy ? "Asking AI…" : "✨ Ask AI to fix"}
+                {aiBusy ? "Asking AI…" : "✨ One-click AI fix"}
               </Button>
             )}
             <Button variant="ghost" onClick={handleRedeploy}>↻ Redeploy</Button>

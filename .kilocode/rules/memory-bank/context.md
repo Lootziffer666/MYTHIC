@@ -34,6 +34,7 @@ Fable must not create, expand, repair, or execute verification suites and must n
 
 ## Recently Completed
 
+- [x] Expanded manual AI repair into a bounded one-click source repair path: MYTHIC now sends selected app/source snapshots to the LLM, accepts complete-file source patches for build-blocking Next.js/React errors, safely applies them only inside the deployment worktree, logs changed files, then rebuilds/redeploys.
 - [x] Added explicit MYTHIC release resolution for the Provisioner: stable channel defaults to a pinned image tag, development images require an explicit override, and release metadata is stored in state/handover.
 - [x] Extended the local Provisioner launcher with a read-only Hetzner capability discovery action that keeps provider credentials in the loopback session and does not execute mutations from the browser.
 - [x] Added the first local loopback-only browser launcher slice for the Provisioner default human path, with mode selection and Brain/Hands explanation that does not request cloud credentials before entry-mode choice.
@@ -108,3 +109,4 @@ Fable must not create, expand, repair, or execute verification suites and must n
 | 2026-07-12 | Added the initial embedded loopback-only Provisioner browser launcher, keeping the CLI as the executable automation path while making no-args launch open a local setup surface. |
 | 2026-07-12 | Extended the launcher with read-only provider capability discovery so cloud choices can be inspected locally before any mutation. |
 | 2026-07-12 | Added Provisioner release-channel/image resolution and handover/state metadata for the installed MYTHIC artifact. |
+| 2026-07-14 | Expanded one-click AI repair so application-source build failures (for example Next.js prerender/React key issues) can be diagnosed as app problems, patched in the cloned worktree with bounded complete-file replacements, and immediately rebuilt/redeployed from the Wizard or deployment detail page. |
