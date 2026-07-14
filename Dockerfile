@@ -6,7 +6,7 @@ WORKDIR /app
 # better-sqlite3 falls back to node-gyp when no matching prebuilt binary exists.
 # Keep the compiler toolchain in the build stage only.
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends \
+    && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
         python3 \
         make \
         g++ \
@@ -37,13 +37,21 @@ ENV PORT=3000
 ENV BUN_INSTALL=/root/.bun
 ENV PATH="/root/.bun/bin:${PATH}"
 
-# nixpacks is used by the MYTHIC deployment engine to detect and build user repos.
+# Nixpacks is a standalone Rust CLI, not an npm package. It shells out to the
+# Docker client for image builds, while the daemon is reached through the host
+# socket mounted by the deployment platform.
+ARG NIXPACKS_VERSION=1.41.0
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends \
+    && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
         ca-certificates \
         curl \
         git \
-    && bun install -g nixpacks \
+        tar \
+        docker-cli \
+    && curl -sSL https://nixpacks.com/install.sh \
+        | NIXPACKS_VERSION="${NIXPACKS_VERSION}" bash -s -- --yes \
+    && nixpacks --version \
+    && docker --version \
     && rm -rf /var/lib/apt/lists/*
 
 COPY --from=deps /app/node_modules ./node_modules
