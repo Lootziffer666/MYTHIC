@@ -6,16 +6,14 @@ import path from "node:path";
 import type Docker from "dockerode";
 
 function buildProcessEnv(): NodeJS.ProcessEnv {
-  const blocked = new Set(["NODE_ENV", "NPM_CONFIG_PRODUCTION", "NPM_CONFIG_OMIT"]);
-  const inherited = Object.fromEntries(
-    Object.entries(process.env).filter(([key]) => !blocked.has(key))
-  );
-
-  // MYTHIC itself runs with NODE_ENV=production. Nixpacks must receive a build
-  // environment instead, otherwise package managers can omit devDependencies
-  // such as Tailwind, PostCSS and TypeScript before the application build.
+  // MYTHIC itself runs with NODE_ENV=production. Nixpacks must receive an
+  // explicit build environment so package managers keep devDependencies such
+  // as Tailwind, PostCSS and TypeScript available during compilation.
   return {
-    ...inherited,
+    ...process.env,
+    NODE_ENV: "development",
+    NPM_CONFIG_PRODUCTION: "false",
+    NPM_CONFIG_OMIT: "",
     NPM_CONFIG_INCLUDE: "dev",
     YARN_PRODUCTION: "false",
   };
