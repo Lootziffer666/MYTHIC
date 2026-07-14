@@ -1,4 +1,5 @@
 import fs from "node:fs";
+import path from "node:path";
 import { store } from "./db";
 import { CONFIG, ensureDirs, repoPath } from "./config";
 import { cloneRepo } from "./git";
@@ -16,9 +17,98 @@ import {
   applyFixToAnalysis,
   requestAiFix,
   type AiFix,
+  type AiSourcePatch,
 } from "./ai";
 import { randomId } from "./format";
 import type { AnalysisResult, DeploymentMode, DeploymentRecord } from "./types";
+
+
+const SOURCE_SNAPSHOT_EXTENSIONS = new Set([
+  ".js",
+  ".jsx",
+  ".ts",
+  ".tsx",
+  ".json",
+  ".mjs",
+  ".cjs",
+]);
+
+const SOURCE_SNAPSHOT_NAMES = new Set([
+  "package.json",
+  "next.config.js",
+  "next.config.mjs",
+  "next.config.ts",
+  "app",
+  "pages",
+  "components",
+  "src",
+]);
+
+function shouldSkipDir(name: string): boolean {
+  return [".git", "node_modules", ".next", "dist", "build", "coverage"].includes(name);
+}
+
+function collectSourceSnapshots(root: string): string {
+  const snapshots: string[] = [];
+  const maxFiles = 24;
+  const maxCharsPerFile = 10000;
+  const maxTotalChars = 55000;
+
+  function walk(dir: string): void {
+    if (snapshots.length >= maxFiles) return;
+    for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+      if (snapshots.length >= maxFiles) return;
+      if (shouldSkipDir(entry.name)) continue;
+      const absolute = path.join(dir, entry.name);
+      const relative = path.relative(root, absolute).replaceAll(path.sep, "/");
+      const top = relative.split("/")[0];
+      if (!SOURCE_SNAPSHOT_NAMES.has(entry.name) && !SOURCE_SNAPSHOT_NAMES.has(top)) continue;
+      if (entry.isDirectory()) {
+        walk(absolute);
+        continue;
+      }
+      if (!entry.isFile()) continue;
+      if (!SOURCE_SNAPSHOT_EXTENSIONS.has(path.extname(entry.name)) && !SOURCE_SNAPSHOT_NAMES.has(entry.name)) continue;
+      const content = fs.readFileSync(absolute, "utf8").slice(0, maxCharsPerFile);
+      snapshots.push(`FILE: ${relative}\n${content}`);
+    }
+  }
+
+  try {
+    walk(root);
+  } catch {
+    return "";
+  }
+
+  return snapshots.join("\n\n---\n\n").slice(0, maxTotalChars);
+}
+
+function resolvePatchPath(root: string, patchPath: string): string | null {
+  const normalized = patchPath.replaceAll("\\", "/");
+  if (normalized.startsWith("/") || normalized.includes("../") || normalized === "..") return null;
+  const absolute = path.resolve(/*turbopackIgnore: true*/ root, normalized);
+  const relative = path.relative(root, absolute);
+  if (relative.startsWith("..") || path.isAbsolute(relative)) return null;
+  return absolute;
+}
+
+function applySourcePatches(root: string, patches: AiSourcePatch[], log: (line: string) => void): string[] {
+  const changed: string[] = [];
+  for (const patch of patches) {
+    const absolute = resolvePatchPath(root, patch.path);
+    if (!absolute) {
+      log(`Skipped unsafe AI source patch path: ${patch.path}`);
+      continue;
+    }
+    if (!fs.existsSync(absolute) || !fs.statSync(absolute).isFile()) {
+      log(`Skipped AI source patch for non-existing file: ${patch.path}`);
+      continue;
+    }
+    fs.writeFileSync(absolute, patch.content.endsWith("\n") ? patch.content : `${patch.content}\n`);
+    changed.push(path.relative(root, absolute).replaceAll(path.sep, "/"));
+  }
+  return changed;
+}
 
 const repairing = new Set<string>();
 
@@ -159,6 +249,10 @@ async function executeRepair(record: DeploymentRecord, fix: AiFix): Promise<void
     if (fix.buildCommand) log(`Patched build command: ${fix.buildCommand}`);
     if (fix.startCommand) log(`Patched start command: ${fix.startCommand}`);
     if (fix.dockerfile) log("AI supplied a complete replacement Dockerfile.");
+    if (fix.sourcePatches?.length) {
+      const changed = applySourcePatches(dir, fix.sourcePatches, log);
+      if (changed.length) log(`AI patched source files: ${changed.join(", ")}`);
+    }
 
     await buildAndDeployRepair(store.get(id) ?? record, patched);
   } catch (err) {
@@ -178,12 +272,31 @@ export async function startManualAiFixDeployment(id: string): Promise<ManualAiFi
     return { fix: null, deployment: record, error: "AI is not configured" };
   }
 
+  ensureDirs();
+  const dir = repoPath(id);
+  const log = (line: string) => appendLog(id, line);
+
+  try {
+    if (!fs.existsSync(dir)) {
+      store.update(id, { status: "cloning" });
+      log("AI repair worktree missing; cloning the repository before diagnosis.");
+      await cloneRepo(id, record.repoUrl, { branch: record.branch }, log);
+    }
+  } catch (err) {
+    return {
+      fix: null,
+      deployment: record,
+      error: err instanceof Error ? err.message : String(err),
+    };
+  }
+
   let fix: AiFix | null;
   try {
     fix = await requestAiFix({
       repoUrl: record.repoUrl,
       logs: record.logs,
       analysis: record.analysis,
+      sourceContext: collectSourceSnapshots(dir),
     });
   } catch (err) {
     return {

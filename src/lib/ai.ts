@@ -1,6 +1,11 @@
 import type { AnalysisResult } from "./types";
 import { getDefaultProvider, getProviderSecret, listProviders } from "./settings";
 
+export interface AiSourcePatch {
+  path: string;
+  content: string;
+}
+
 export interface AiFix {
   diagnosis: string;
   explanation: string;
@@ -9,6 +14,7 @@ export interface AiFix {
   port?: number;
   environment?: Record<string, string>;
   dockerfile?: string;
+  sourcePatches?: AiSourcePatch[];
 }
 
 export interface AiConfig {
@@ -66,11 +72,17 @@ At least one of these fields MUST contain an executable change:
 - port
 - environment
 - dockerfile
+- sourcePatches
 
 For a missing Node package, return a buildCommand that installs the exact missing package
 with the package manager visible in the logs and then runs the original build command.
 For example, use a pattern like "npm install -D <package> && npm run build" when npm is
 clearly in use. Do not merely explain that a package should be added.
+
+For framework/runtime build errors caused by application code (for example Next.js prerender
+failures, React hook misuse, or missing React list keys), prefer sourcePatches over deployment
+metadata. A sourcePatches item must contain the complete replacement contents for one existing
+text file. Keep patches minimal and only modify files included in the source snapshots.
 
 A dockerfile value must be complete Dockerfile contents, not a fragment. Only set fields
 you are confident about. Do not invent secrets, domains, or package names.
@@ -83,7 +95,8 @@ Respond with STRICT JSON only (no markdown, no code fences):
   "startCommand": "corrected executable start command or null",
   "port": 3000,
   "environment": { "KEY": "value" },
-  "dockerfile": "complete optional Dockerfile contents or null"
+  "dockerfile": "complete optional Dockerfile contents or null",
+  "sourcePatches": [{ "path": "relative/path.tsx", "content": "complete replacement file contents" }]
 }`;
 
 function extractJson(text: string): Partial<AiFix> {
@@ -109,6 +122,7 @@ export function isActionableAiFix(fix: Partial<AiFix> | null | undefined): boole
     fix.buildCommand?.trim() ||
       fix.startCommand?.trim() ||
       fix.dockerfile?.trim() ||
+      (Array.isArray(fix.sourcePatches) && fix.sourcePatches.length > 0) ||
       (typeof fix.port === "number" && Number.isFinite(fix.port)) ||
       environment
   );
@@ -118,6 +132,7 @@ export async function requestAiFix(input: {
   repoUrl: string;
   logs: string;
   analysis: AnalysisResult | null;
+  sourceContext?: string;
 }): Promise<AiFix | null> {
   const cfg = getAiConfig();
   if (!cfg) return null;
@@ -129,7 +144,11 @@ Current start command: ${input.analysis?.startCommand ?? "(none)"}
 
 --- PIPELINE LOGS ---
 ${input.logs.slice(-8000)}
---- END LOGS ---`;
+--- END LOGS ---
+
+--- SOURCE SNAPSHOTS ---
+${input.sourceContext ?? "(not available)"}
+--- END SOURCE SNAPSHOTS ---`;
 
   const res = await fetch(`${cfg.baseUrl.replace(/\/$/, "")}/chat/completions`, {
     method: "POST",
@@ -160,6 +179,19 @@ ${input.logs.slice(-8000)}
   const parsed = extractJson(content);
   if (!isActionableAiFix(parsed)) return null;
 
+  const sourcePatches = Array.isArray(parsed.sourcePatches)
+    ? parsed.sourcePatches
+        .filter((patch): patch is { path: string; content: string } =>
+          patch &&
+          typeof patch === "object" &&
+          typeof patch.path === "string" &&
+          typeof patch.content === "string" &&
+          patch.path.trim().length > 0 &&
+          patch.content.trim().length > 0
+        )
+        .map((patch) => ({ path: patch.path.trim(), content: patch.content }))
+    : undefined;
+
   const environment: Record<string, string> = {};
   if (parsed.environment && typeof parsed.environment === "object") {
     for (const [key, value] of Object.entries(parsed.environment)) {
@@ -175,6 +207,7 @@ ${input.logs.slice(-8000)}
     port: typeof parsed.port === "number" && Number.isFinite(parsed.port) ? parsed.port : undefined,
     environment: Object.keys(environment).length ? environment : undefined,
     dockerfile: parsed.dockerfile?.trim() || undefined,
+    sourcePatches: sourcePatches?.length ? sourcePatches : undefined,
   };
 }
 
