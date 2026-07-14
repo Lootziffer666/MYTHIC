@@ -5,6 +5,25 @@ import fs from "node:fs";
 export interface CloneOptions {
   branch?: string;
   depth?: number;
+  /**
+   * For private repos: a GitHub token injected via a redacted `http.extraheader`
+   * git config, never embedded in the clone URL and never logged in plaintext
+   * (both would otherwise leak it into DeploymentRecord.repoUrl / .logs, which
+   * are persisted and shown in the UI).
+   */
+  authToken?: string;
+}
+
+function authArgsFor(authToken: string | undefined): string[] {
+  if (!authToken) return [];
+  const header = `AUTHORIZATION: basic ${Buffer.from(`x-access-token:${authToken}`).toString("base64")}`;
+  return ["-c", `http.extraheader=${header}`];
+}
+
+function redactedForLog(args: string[]): string {
+  return args
+    .map((a) => (a.startsWith("http.extraheader=") ? "http.extraheader=AUTHORIZATION: basic ***" : a))
+    .join(" ");
 }
 
 export async function cloneRepo(
@@ -19,7 +38,8 @@ export async function cloneRepo(
     fs.rmSync(target, { recursive: true, force: true });
   }
 
-  const args = ["clone", "--single-branch"];
+  const authArgs = authArgsFor(options.authToken);
+  const args = [...authArgs, "clone", "--single-branch"];
   if (options.branch) args.push("--branch", options.branch);
   if (options.depth) args.push("--depth", String(options.depth));
 
@@ -28,7 +48,7 @@ export async function cloneRepo(
   if (fs.existsSync(tmp)) fs.rmSync(tmp, { recursive: true, force: true });
   args.push(repoUrl, tmp);
 
-  onLog?.(`$ git ${args.join(" ")}`);
+  onLog?.(`$ git ${redactedForLog(args)}`);
   try {
     const { stdout, stderr } = await execFileAsync("git", args, { maxBuffer: 1024 * 1024 * 20 });
     if (stdout.trim()) onLog?.(stdout);
@@ -42,8 +62,8 @@ export async function cloneRepo(
     if (branchMissing && options.branch) {
       onLog?.(`Branch "${options.branch}" not found, cloning default branch instead.`);
       fs.rmSync(tmp, { recursive: true, force: true });
-      const fallback = ["clone", repoUrl, tmp];
-      onLog?.(`$ git ${fallback.join(" ")}`);
+      const fallback = [...authArgs, "clone", repoUrl, tmp];
+      onLog?.(`$ git ${redactedForLog(fallback)}`);
       const { stdout, stderr } = await execFileAsync("git", fallback, {
         maxBuffer: 1024 * 1024 * 20,
       });

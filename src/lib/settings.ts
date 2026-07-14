@@ -141,3 +141,31 @@ export function updateProvider(id: string, patch: Partial<LlmProviderInput>): Ll
 export function deleteProvider(id: string): void {
   getDb().prepare("DELETE FROM llm_providers WHERE id = ?").run(id);
 }
+
+// ---- GitHub token (multideploy's own-repos listing + private-repo clones) ----
+// Same encrypted-at-rest treatment as LLM provider keys, stored in the generic
+// settings table (no schema change needed) as a JSON-encoded EncryptedValue.
+
+const GITHUB_TOKEN_KEY = "githubToken";
+
+export function setGithubToken(token: string): void {
+  setSetting(GITHUB_TOKEN_KEY, JSON.stringify(encrypt(token)));
+}
+
+export function getGithubToken(): string | null {
+  const raw = getSetting(GITHUB_TOKEN_KEY);
+  if (!raw) return null;
+  try {
+    return decrypt(JSON.parse(raw) as EncryptedValue);
+  } catch {
+    return null;
+  }
+}
+
+export function hasGithubToken(): boolean {
+  return getGithubToken() !== null;
+}
+
+export function clearGithubToken(): void {
+  getDb().prepare("DELETE FROM settings WHERE key = ?").run(GITHUB_TOKEN_KEY);
+}

@@ -125,7 +125,7 @@ async function buildAndDeploy(
   );
 }
 
-async function runPipeline(record: DeploymentRecord): Promise<void> {
+async function runPipeline(record: DeploymentRecord, authToken?: string): Promise<void> {
   const id = record.id;
   if (running.has(id)) return;
   running.add(id);
@@ -140,7 +140,7 @@ async function runPipeline(record: DeploymentRecord): Promise<void> {
     // --- Phase 1: Ingestion ---
     set({ status: "cloning" });
     log(`\n[1/4] INGESTION — cloning repository`);
-    await cloneRepo(id, record.repoUrl, { branch: record.branch }, log);
+    await cloneRepo(id, record.repoUrl, { branch: record.branch, authToken }, log);
 
     // --- Phase 2: Analysis ---
     set({ status: "analyzing" });
@@ -191,10 +191,15 @@ async function runPipeline(record: DeploymentRecord): Promise<void> {
   }
 }
 
-export function createDeployment(input: CreateDeploymentInput): DeploymentRecord {
+/**
+ * @param authToken Never persisted (not part of CreateDeploymentInput/DeploymentRecord)
+ *   — only threaded through to the clone step for this one run. Needed for private
+ *   repos, e.g. multideploy stacks built from the user's own GitHub repos.
+ */
+export function createDeployment(input: CreateDeploymentInput, authToken?: string): DeploymentRecord {
   const record = buildRecord(input);
   store.create(record);
-  void runPipeline(record);
+  void runPipeline(record, authToken);
   return record;
 }
 

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { store } from "@/lib/db";
+import { store, stackStore } from "@/lib/db";
 import { listDockerContainers } from "@/lib/docker";
 import { StatusPill } from "@/components/StatusPill";
 
@@ -7,6 +7,7 @@ export const dynamic = "force-dynamic";
 
 export default async function DashboardPage() {
   const deployments = store.list();
+  const stacks = stackStore.list();
   const docker = await listDockerContainers();
   const managed = docker.containers.filter((c) => c.managedByMythic);
 
@@ -17,8 +18,30 @@ export default async function DashboardPage() {
           <h1 className="text-2xl font-bold text-white">Deployments</h1>
           <p className="mt-1 text-sm text-neutral-400">Everything routed through your reverse proxy.</p>
         </div>
-        <Link href="/" className="btn-primary">+ New deployment</Link>
+        <div className="flex gap-2">
+          <Link href="/stacks/new" className="btn-ghost">Multideploy</Link>
+          <Link href="/" className="btn-primary">+ New deployment</Link>
+        </div>
       </div>
+
+      {stacks.length > 0 && (
+        <section className="mt-8">
+          <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-neutral-400">Stacks</h2>
+          <div className="space-y-3">
+            {stacks.map((s) => (
+              <Link key={s.id} href={`/stacks/${s.id}`} className="glass block rounded-xl p-4 transition hover:border-neutral-600">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="font-semibold text-white">{s.name}</div>
+                    <div className="mt-0.5 text-xs text-neutral-500">{s.members.length} repo(s)</div>
+                  </div>
+                  <StatusPill status={s.status} />
+                </div>
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
 
       <section className="mt-8 grid gap-4 lg:grid-cols-[1.2fr_0.8fr]">
         <div className="glass rounded-2xl p-5">
